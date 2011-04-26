@@ -1,11 +1,13 @@
 package org.strictfptool.callgraph;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
 import org.objectweb.asm.MethodType;
+import org.objectweb.asm.Type;
 
 public class CallGraph {
     public interface ClassAnnotation {
@@ -15,11 +17,13 @@ public class CallGraph {
     }
     
     public class ClassNode extends AbstractHavingAnnotations<ClassAnnotation> {
-        private String name; // The "internal name" of the class
+        private String name;          // The "internal name" of the class
+        private ClassNode superclass; // Possibly null
         private List<MethodNode> methods;
         
-        private ClassNode(String name) {
+        private ClassNode(String name, ClassNode superclass) {
             this.name = name;
+            this.superclass = superclass;
             this.methods = new ArrayList<CallGraph.MethodNode>();
         }
         
@@ -27,10 +31,63 @@ public class CallGraph {
             return name;
         }
         
+        public ClassNode getSuperclass() {
+            return superclass;
+        }
+        
         public MethodNode addMethod(String name, MethodType type) {
+            if (hasLocalMethod(name, type)) {
+                throw new IllegalArgumentException("Method already added to class: " + name + " " + type.getDescriptor());
+            }
             MethodNode method = new MethodNode(name, type, this);
             methods.add(method);
             return method;
+        }
+        
+        public MethodNode tryGetMethod(String name, MethodType type) {
+            MethodNode m = tryGetLocalMethod(name, type);
+            if (m == null && superclass != null) {
+                return superclass.tryGetMethod(name, type);
+            } else {
+                return m;
+            }
+        }
+        
+        public MethodNode getMethod(String name, MethodType type) {
+            MethodNode m = tryGetMethod(name, type);
+            if (m == null) {
+                throw new IllegalArgumentException("No such method " + this.name + " :: " + name + " " + type);
+            }
+            return m;
+        }
+        
+        public boolean hasMethod(String name, MethodType type) {
+            return tryGetMethod(name, type) != null;
+        }
+        
+        public MethodNode tryGetLocalMethod(String name, MethodType type) {
+            for (MethodNode m : methods) {
+                if (m.getName().equals(name) && m.getType().equals(type)) {
+                    return m;
+                }
+            }
+            return null;
+        }
+        
+        public MethodNode getLocalMethod(String name, MethodType type) {
+            MethodNode m = tryGetLocalMethod(name, type);
+            if (m == null) {
+                throw new IllegalArgumentException("No such local method " + this.name + " :: " + name + " " + type);
+            }
+            return m;
+        }
+        
+        public boolean hasLocalMethod(String name, MethodType type) {
+            return tryGetLocalMethod(name, type) != null;
+        }
+        
+        public List<MethodNode> getMethods() {
+            return Collections.unmodifiableList(methods);
         }
         
         @Override
@@ -76,7 +133,7 @@ public class CallGraph {
         
         @Override
         public String toString() {
-            return "Method " + owner.getName() + " :: " + name + " [" + type.getDescriptor() + "]";
+            return "method " + owner.getName() + " :: " + name + " " + type.getDescriptor();
         }
     }
     
@@ -99,7 +156,7 @@ public class CallGraph {
         
         @Override
         public String toString() {
-            return "Call from " + from.getName() + " to " + to.getName();
+            return "call from " + from.getName() + " to " + to.getName();
         }
     }
     
@@ -109,10 +166,41 @@ public class CallGraph {
         this.classes = new HashMap<String, CallGraph.ClassNode>();
     }
     
-    public ClassNode addClass(String internalName) {
-        ClassNode cls = new ClassNode(internalName);
+    public ClassNode addClass(String internalName, ClassNode superclass) {
+        if (hasClass(internalName)) {
+            throw new IllegalArgumentException("Class already added: " + internalName);
+        }
+        ClassNode cls = new ClassNode(internalName, superclass);
         classes.put(internalName, cls);
         return cls;
+    }
+    
+    public boolean hasClass(String internalName) {
+        return classes.containsKey(internalName);
+    }
+    
+    public boolean hasClass(Class<?> cls) {
+        return hasClass(Type.getInternalName(cls));
+    }
+    
+    public ClassNode getClass(String internalName) {
+        ClassNode cn = tryGetClass(internalName);
+        if (cn == null) {
+            throw new IllegalStateException("No such class in the call graph: " + internalName);
+        }
+        return cn;
+    }
+    
+    public ClassNode getClass(Class<?> cls) {
+        return getClass(Type.getInternalName(cls));
+    }
+    
+    public Collection<ClassNode> getClasses() {
+        return classes.values();
+    }
+    
+    public ClassNode tryGetClass(String internalName) {
+        return classes.get(internalName);
     }
     
     public CallSite addCall(MethodNode from, MethodNode to) {
@@ -121,6 +209,4 @@ public class CallGraph {
         to.incomingCalls.add(cs);
         return cs;
     }
-    
-    
 }

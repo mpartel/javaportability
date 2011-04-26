@@ -13,8 +13,8 @@ public class CallGraphTest {
     @Test
     public void testFindingCallersAndCallees() {
         CallGraph cg = new CallGraph();
-        ClassNode a = cg.addClass("A");
-        ClassNode b = cg.addClass("B");
+        ClassNode a = cg.addClass("A", null);
+        ClassNode b = cg.addClass("B", null);
         MethodNode foo = a.addMethod("foo", new MethodType("()V"));
         MethodNode bar = b.addMethod("bar", new MethodType("()V"));
         cg.addCall(foo, bar);
@@ -29,4 +29,49 @@ public class CallGraphTest {
         assertSame(foo, cs.getFrom());
         assertSame(bar, cs.getTo());
     }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddingClassTwice() {
+        CallGraph cg = new CallGraph();
+        cg.addClass("A", null);
+        cg.addClass("A", null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddingMethodTwice() {
+        CallGraph cg = new CallGraph();
+        ClassNode a = cg.addClass("A", null);
+        a.addMethod("foo", new MethodType("()V"));
+        a.addMethod("foo", new MethodType("()V"));
+    }
+    
+    @Test
+    public void testAddingOverloadedMethod() {
+        CallGraph cg = new CallGraph();
+        ClassNode a = cg.addClass("A", null);
+        a.addMethod("foo", new MethodType("()V"));
+        a.addMethod("foo", new MethodType("()I"));
+        assertEquals(2, a.getMethods().size());
+    }
+    
+    @Test
+    public void testFindingMethodsDefinedInSuperclass() {
+        CallGraph cg = new CallGraph();
+        ClassNode a = cg.addClass("A", null);
+        ClassNode b = cg.addClass("B", a);
+        MethodNode m = a.addMethod("foo", new MethodType("()V"));
+        assertSame(m, b.getMethod("foo", new MethodType("()V")));
+    }
+    
+    @Test
+    public void testOverridingMethods() {
+        CallGraph cg = new CallGraph();
+        ClassNode a = cg.addClass("A", null);
+        ClassNode b = cg.addClass("B", a);
+        MethodNode m1 = a.addMethod("foo", new MethodType("()V"));
+        MethodNode m2 = b.addMethod("foo", new MethodType("()V"));
+        assertSame(m1, a.getMethod("foo", new MethodType("()V")));
+        assertSame(m2, b.getMethod("foo", new MethodType("()V")));
+    }
+    
 }
