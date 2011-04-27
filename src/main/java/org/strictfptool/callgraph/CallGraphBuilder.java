@@ -58,15 +58,9 @@ public class CallGraphBuilder extends EmptyVisitor {
         try {
             while (!classQueue.isEmpty() || !methodQueue.isEmpty()) {
                 if (!classQueue.isEmpty()) {
-                    String internalName = classQueue.remove();
-                    if (!callGraph.hasClass(internalName)) {
-                        discoverClass(internalName);
-                    }
+                    workClassQueue();
                 } else {
-                    MethodPath m = methodQueue.peek();
-                    if (analyzeMethod(m)) {
-                        methodQueue.remove();
-                    }
+                    workMethodQueue();
                 }
             }
         } catch (CheckedExceptionWrapper e) {
@@ -75,10 +69,24 @@ public class CallGraphBuilder extends EmptyVisitor {
             }
         }
     }
+
+    private void workClassQueue() throws IOException {
+        String internalName = classQueue.remove();
+        if (!callGraph.hasClass(internalName)) {
+            discoverClass(internalName);
+        }
+    }
+    
+    private void workMethodQueue() {
+        MethodPath m = methodQueue.peek();
+        if (tryProcessMethod(m)) {
+            methodQueue.remove();
+        }
+    }
     
     private ClassNode discoverClass(String internalName) throws IOException {
         if (!isBasicArrayClass(internalName) && !ignoreSet.containsClass(internalName)) {
-            trace("Analyzing class " + internalName);
+            trace("Discovering class " + internalName);
             
             ClassReader reader = classFileLoader.loadClass(internalName);
             ClassDiscoverer discoverer = new ClassDiscoverer();
@@ -95,7 +103,7 @@ public class CallGraphBuilder extends EmptyVisitor {
         return arrayClassRegex.matcher(internalName).matches();
     }
     
-    private boolean analyzeMethod(MethodPath methodPath) {
+    private boolean tryProcessMethod(MethodPath methodPath) {
         if (!callGraph.hasClass(methodPath.getOwner())) {
             trace("Class owning method " + methodPath + " not yet discovered");
             classQueue.add(methodPath.getOwner());
@@ -106,29 +114,11 @@ public class CallGraphBuilder extends EmptyVisitor {
         
         if (result.basicAnalysisDoneMethods().contains(methodNode)) {
             trace("Already analyzed method " + methodPath);
-            return true; // Already analyzed
+            return true;
         }
         
         if (enqueueUndiscoveredCalleeClasses(methodNode) == 0) {
-            result.basicAnalysisDoneMethods().add(methodNode);
-            
-            List<MethodPath> calls = unanalyzedCalls.remove(methodNode);
-            
-            for (MethodPath callee : calls) {
-                if (ignoreSet.containsMethod(callee)) {
-                    continue;
-                }
-                
-                MethodNode calleeNode = getMethodNode(callee);
-                callGraph.addCall(methodNode, calleeNode);
-                
-                if (!result.basicAnalysisDoneMethods().contains(calleeNode)) {
-                    methodQueue.add(callee);
-                }
-                
-                trace("Recorded call from " + methodNode + " to " + calleeNode);
-            }
-            
+            processCallsFromMethod(methodNode);
             return true;
         } else {
             trace("Undiscovered callee classes for " + methodPath);
@@ -136,6 +126,10 @@ public class CallGraphBuilder extends EmptyVisitor {
         }
     }
     
+    private MethodNode getMethodNode(MethodPath methodPath) {
+        return callGraph.getClass(methodPath.getOwner()).getMethod(methodPath.getName(), new MethodType(methodPath.getDesc()));
+    }
+
     private int enqueueUndiscoveredCalleeClasses(MethodNode methodNode) {
         List<MethodPath> calls = unanalyzedCalls.get(methodNode);
         if (calls == null) {
@@ -152,9 +146,26 @@ public class CallGraphBuilder extends EmptyVisitor {
         
         return count;
     }
-
-    private MethodNode getMethodNode(MethodPath methodPath) {
-        return callGraph.getClass(methodPath.getOwner()).getMethod(methodPath.getName(), new MethodType(methodPath.getDesc()));
+    
+    private void processCallsFromMethod(MethodNode methodNode) {
+        result.basicAnalysisDoneMethods().add(methodNode);
+        
+        List<MethodPath> calls = unanalyzedCalls.remove(methodNode);
+        
+        for (MethodPath callee : calls) {
+            if (ignoreSet.containsMethod(callee)) {
+                continue;
+            }
+            
+            MethodNode calleeNode = getMethodNode(callee);
+            callGraph.addCall(methodNode, calleeNode);
+            
+            if (!result.basicAnalysisDoneMethods().contains(calleeNode)) {
+                methodQueue.add(callee);
+            }
+            
+            trace("Recorded call from " + methodNode + " to " + calleeNode);
+        }
     }
 
     private class ClassDiscoverer extends EmptyVisitor {
