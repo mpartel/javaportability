@@ -30,6 +30,10 @@ public class CallGraph {
             return superclass;
         }
         
+        public boolean isRootClass() {
+            return this == rootClass;
+        }
+        
         public MethodNode addMethod(String name, MethodType type) {
             if (hasLocalMethod(name, type)) {
                 throw new IllegalArgumentException("Method already added to class: " + name + " " + type.getDescriptor());
@@ -118,6 +122,10 @@ public class CallGraph {
             return owner;
         }
         
+        public boolean isRootMethod() {
+            return this == rootMethod;
+        }
+        
         public List<CallSite> getOutgoingCalls() {
             return Collections.unmodifiableList(outgoingCalls);
         }
@@ -155,10 +163,23 @@ public class CallGraph {
         }
     }
     
+    private final ClassNode rootClass;
+    private final MethodNode rootMethod;
     private HashMap<String, ClassNode> classes;
     
     public CallGraph() {
+        this.rootClass = new ClassNode("<root>", null);
+        this.rootMethod = rootClass.addMethod("<root>", new MethodType("()V"));
         this.classes = new HashMap<String, CallGraph.ClassNode>();
+        this.classes.put("<root>", rootClass);
+    }
+    
+    public ClassNode getRootClass() {
+        return rootClass;
+    }
+    
+    public MethodNode getRootMethod() {
+        return rootMethod;
     }
     
     public ClassNode addClass(String internalName, ClassNode superclass) {

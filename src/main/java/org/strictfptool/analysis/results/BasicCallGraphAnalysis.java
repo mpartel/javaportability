@@ -1,5 +1,6 @@
 package org.strictfptool.analysis.results;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -23,6 +24,14 @@ public class BasicCallGraphAnalysis {
         this.nativeMethods = new HashSet<MethodNode>();
         this.strictfpMethods = new HashSet<MethodNode>();
         this.basicAnalysisDoneMethods = new HashSet<MethodNode>();
+    }
+    
+    protected BasicCallGraphAnalysis(BasicCallGraphAnalysis source) {
+        this.callGraph = source.callGraph;
+        this.localFpMathMethods = Collections.unmodifiableSet(source.localFpMathMethods);
+        this.nativeMethods = Collections.unmodifiableSet(source.nativeMethods);
+        this.strictfpMethods = Collections.unmodifiableSet(source.strictfpMethods);
+        this.basicAnalysisDoneMethods = Collections.unmodifiableSet(source.basicAnalysisDoneMethods);
     }
     
     public CallGraph callGraph() {
