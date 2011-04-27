@@ -16,10 +16,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.commons.EmptyVisitor;
 import org.strictfptool.ClassFileLoader;
 import org.strictfptool.MethodPath;
-import org.strictfptool.annotations.DoesLocalFpMath;
-import org.strictfptool.annotations.NativeMethod;
-import org.strictfptool.annotations.StrictfpMethod;
-import org.strictfptool.annotations.TransitivelyAnalyzed;
+import org.strictfptool.analysis.results.BasicCallGraphAnalysis;
 import org.strictfptool.callgraph.CallGraph.ClassNode;
 import org.strictfptool.callgraph.CallGraph.MethodNode;
 import org.strictfptool.ignoreset.EmptyIgnoreSet;
@@ -29,25 +26,27 @@ import org.strictfptool.misc.CheckedExceptionWrapper;
 public class CallGraphBuilder extends EmptyVisitor {
 
     private CallGraph callGraph;
+    private BasicCallGraphAnalysis result;
     private ClassFileLoader classFileLoader;
     private IgnoreSet ignoreSet;
     private Queue<String> classQueue;
     private Queue<MethodPath> methodQueue;
     private HashMap<MethodNode, List<MethodPath>> unanalyzedCalls;
     
-    public static CallGraph buildCallGraph(ClassFileLoader loader, Set<MethodPath> roots) throws IOException {
+    public static BasicCallGraphAnalysis buildCallGraph(ClassFileLoader loader, Set<MethodPath> roots) throws IOException {
         return buildCallGraph(loader, roots, EmptyIgnoreSet.getInstance());
     }
     
-    public static CallGraph buildCallGraph(ClassFileLoader loader, Set<MethodPath> roots, IgnoreSet ignoreSet) throws IOException {
+    public static BasicCallGraphAnalysis buildCallGraph(ClassFileLoader loader, Set<MethodPath> roots, IgnoreSet ignoreSet) throws IOException {
         CallGraph cg = new CallGraph();
         CallGraphBuilder builder = new CallGraphBuilder(cg, loader, roots, ignoreSet);
         builder.mainLoop();
-        return cg;
+        return builder.result;
     }
     
     private CallGraphBuilder(CallGraph callGraph, ClassFileLoader classFileLoader, Set<MethodPath> roots, IgnoreSet ignoreSet) {
         this.callGraph = callGraph;
+        this.result = new BasicCallGraphAnalysis(callGraph);
         this.classFileLoader = classFileLoader;
         this.ignoreSet = ignoreSet;
         this.classQueue = new LinkedList<String>();
@@ -105,13 +104,13 @@ public class CallGraphBuilder extends EmptyVisitor {
         
         MethodNode methodNode = getMethodNode(methodPath);
         
-        if (methodNode.hasAnnotation(TransitivelyAnalyzed.class)) {
+        if (result.basicAnalysisDoneMethods().contains(methodNode)) {
             trace("Already analyzed method " + methodPath);
             return true; // Already analyzed
         }
         
         if (enqueueUndiscoveredCalleeClasses(methodNode) == 0) {
-            methodNode.addAnnotation(TransitivelyAnalyzed.getInstance());
+            result.basicAnalysisDoneMethods().add(methodNode);
             
             List<MethodPath> calls = unanalyzedCalls.remove(methodNode);
             
@@ -123,7 +122,7 @@ public class CallGraphBuilder extends EmptyVisitor {
                 MethodNode calleeNode = getMethodNode(callee);
                 callGraph.addCall(methodNode, calleeNode);
                 
-                if (!calleeNode.hasAnnotation(TransitivelyAnalyzed.class)) {
+                if (!result.basicAnalysisDoneMethods().contains(calleeNode)) {
                     methodQueue.add(callee);
                 }
                 
@@ -213,10 +212,10 @@ public class CallGraphBuilder extends EmptyVisitor {
             
             MethodNode method = cls.addMethod(name, new MethodType(desc));
             if (isStrictfp(access)) {
-                method.addAnnotation(StrictfpMethod.getInstance());
+                result.strictfpMethods().add(method);
             }
             if (isNative(access)) {
-                method.addAnnotation(NativeMethod.getInstance());
+                result.nativeMethods().add(method);
             }
             
             return new MethodDiscoverer(method);
@@ -255,7 +254,7 @@ public class CallGraphBuilder extends EmptyVisitor {
         @Override
         public void visitInsn(int opcode) {
             if (!foundFpMath && isFloatArithmetic(opcode)) {
-                methodNode.addAnnotation(DoesLocalFpMath.getInstance());
+                result.localFpMathMethods().add(methodNode);
                 foundFpMath = true;
             }
         }

@@ -11,10 +11,7 @@ import org.junit.Test;
 import org.objectweb.asm.MethodType;
 import org.strictfptool.DefaultClassFileLoader;
 import org.strictfptool.MethodPath;
-import org.strictfptool.annotations.DoesLocalFpMath;
-import org.strictfptool.annotations.NativeMethod;
-import org.strictfptool.annotations.StrictfpMethod;
-import org.strictfptool.annotations.TransitivelyAnalyzed;
+import org.strictfptool.analysis.results.BasicCallGraphAnalysis;
 import org.strictfptool.callgraph.CallGraph.CallSite;
 import org.strictfptool.callgraph.CallGraph.MethodNode;
 import org.strictfptool.ignoreset.EmptyIgnoreSet;
@@ -39,7 +36,7 @@ public class CallGraphBuilderTest {
     
     @Test
     public void testNonrecursiveMethodCallsWithinOneClass() {
-        CallGraph cg = build(new MethodPath(Simple.class, "one", "()I"));
+        CallGraph cg = buildCg(new MethodPath(Simple.class, "one", "()I"));
         MethodNode one = cg.getClass(Simple.class).getMethod("one", mt("()I"));
         MethodNode two = cg.getClass(Simple.class).getMethod("two", mt("()I"));
         MethodNode three = cg.getClass(Simple.class).getMethod("three", mt("()I"));
@@ -52,7 +49,7 @@ public class CallGraphBuilderTest {
     
     @Test(expected = IllegalArgumentException.class)
     public void testNonexistentRootMethods() {
-        build(new MethodPath(Simple.class, "one", "()V"));
+        buildCg(new MethodPath(Simple.class, "one", "()V"));
     }
     
     
@@ -72,7 +69,7 @@ public class CallGraphBuilderTest {
     
     @Test
     public void testMutuallyRecursiveMethodsWithinOneClass() {
-        CallGraph cg = build(new MethodPath(InternalMutualRecursion.class, "one", "(I)I"));
+        CallGraph cg = buildCg(new MethodPath(InternalMutualRecursion.class, "one", "(I)I"));
         MethodNode one = cg.getClass(InternalMutualRecursion.class).getMethod("one", mt("(I)I"));
         MethodNode two = cg.getClass(InternalMutualRecursion.class).getMethod("two", mt("(I)I"));
         assertCall(one, two);
@@ -100,7 +97,7 @@ public class CallGraphBuilderTest {
     
     @Test
     public void testMutuallyRecursiveMethodsAcrossClasses() {
-        CallGraph cg = build(new MethodPath(CyclicOne.class, "foo", "()V"));
+        CallGraph cg = buildCg(new MethodPath(CyclicOne.class, "foo", "()V"));
         MethodNode one = cg.getClass(CyclicOne.class).getMethod("foo", mt("()V"));
         MethodNode two = cg.getClass(CyclicTwo.class).getMethod("foo", mt("()V"));
         MethodNode three = cg.getClass(CyclicThree.class).getMethod("foo", mt("()V"));
@@ -136,7 +133,7 @@ public class CallGraphBuilderTest {
     
     @Test
     public void testSuperclassConstructor() {
-        CallGraph cg = build(new MethodPath(Sub.class, "<init>", "(I)V"));
+        CallGraph cg = buildCg(new MethodPath(Sub.class, "<init>", "(I)V"));
         MethodNode superCtor = cg.getClass(Super.class).getMethod("<init>", mt("(II)V"));
         MethodNode subCtor = cg.getClass(Sub.class).getMethod("<init>", mt("(I)V"));
         assertCall(subCtor, superCtor);
@@ -145,7 +142,7 @@ public class CallGraphBuilderTest {
     
     @Test
     public void testPolymorphicCall() {
-        CallGraph cg = build(new MethodPath(Sub.class, "invokeFoo", "()V"));
+        CallGraph cg = buildCg(new MethodPath(Sub.class, "invokeFoo", "()V"));
         MethodNode superInvokeFoo = cg.getClass(Super.class).getMethod("invokeFoo", mt("()V"));
         MethodNode superFoo = cg.getClass(Super.class).getMethod("foo", mt("()V"));
         MethodNode subFoo = cg.getClass(Sub.class).getMethod("foo", mt("()V"));
@@ -170,7 +167,7 @@ public class CallGraphBuilderTest {
     
     @Test
     public void testNestedClasses() {
-        CallGraph cg = build(new MethodPath(Outer.class, "outer", "()V"));
+        CallGraph cg = buildCg(new MethodPath(Outer.class, "outer", "()V"));
         MethodNode outer = cg.getClass(Outer.class).getMethod("outer", mt("()V"));
         MethodNode inner = cg.getClass(Outer.Inner.class).getMethod("inner", mt("()V"));
         
@@ -190,15 +187,16 @@ public class CallGraphBuilderTest {
     
     @Test
     public void testNotDoingTooMuchAnalysis() {
-        CallGraph cg = build(new MethodPath(Irrelevant.class, "noop", "()V"));
+        BasicCallGraphAnalysis result = build(new MethodPath(Irrelevant.class, "noop", "()V"));
+        CallGraph cg = result.callGraph();
         if (cg.hasClass(Simple.class)) {
             fail("The class Simple should not have been loaded into the call graph");
         }
         
         MethodNode noop = cg.getClass(Irrelevant.class).getMethod("noop", mt("()V"));
         MethodNode uninteresting = cg.getClass(Irrelevant.class).getMethod("uninteresting", mt("()I"));
-        assertTrue(noop.hasAnnotation(TransitivelyAnalyzed.class));
-        assertFalse(uninteresting.hasAnnotation(TransitivelyAnalyzed.class));
+        assertTrue(result.basicAnalysisDoneMethods().contains(noop));
+        assertFalse(result.basicAnalysisDoneMethods().contains(uninteresting));
     }
     
     
@@ -220,23 +218,24 @@ public class CallGraphBuilderTest {
     
     @Test
     public void testStrictFpDiscovery() {
-        CallGraph cg = build(
+        BasicCallGraphAnalysis result = build(
             new MethodPath(PartlySfp.class, "sfp", "(D)D"),
             new MethodPath(PartlySfp.class, "nonsfp", "(D)D"),
             new MethodPath(FullySfp.class, "foo", "(D)D")
         );
+        CallGraph cg = result.callGraph();
         
         MethodNode sfp = cg.getClass(PartlySfp.class).getMethod("sfp", mt("(D)D"));
         MethodNode nonsfp = cg.getClass(PartlySfp.class).getMethod("nonsfp", mt("(D)D"));
         MethodNode foo = cg.getClass(FullySfp.class).getMethod("foo", mt("(D)D"));
         
-        assertTrue(sfp.hasAnnotation(DoesLocalFpMath.class));
-        assertTrue(nonsfp.hasAnnotation(DoesLocalFpMath.class));
-        assertTrue(foo.hasAnnotation(DoesLocalFpMath.class));
+        assertTrue(result.localFpMathMethods().contains(sfp));
+        assertTrue(result.localFpMathMethods().contains(nonsfp));
+        assertTrue(result.localFpMathMethods().contains(foo));
         
-        assertTrue(sfp.hasAnnotation(StrictfpMethod.class));
-        assertFalse(nonsfp.hasAnnotation(StrictfpMethod.class));
-        assertTrue(foo.hasAnnotation(StrictfpMethod.class));
+        assertTrue(result.strictfpMethods().contains(sfp));
+        assertFalse(result.strictfpMethods().contains(nonsfp));
+        assertTrue(result.strictfpMethods().contains(foo));
     }
     
     
@@ -248,11 +247,13 @@ public class CallGraphBuilderTest {
     
     @Test
     public void testNativeMethodDiscovery() {
-        CallGraph cg = build(new MethodPath(WithNative.class, "foo", "()V"));
+        BasicCallGraphAnalysis result = build(new MethodPath(WithNative.class, "foo", "()V"));
+        CallGraph cg = result.callGraph();
         MethodNode foo = cg.getClass(WithNative.class).getMethod("foo", mt("()V"));
         MethodNode bar = cg.getClass(WithNative.class).getMethod("bar", mt("()V"));
-        assertTrue(foo.hasAnnotation(NativeMethod.class));
-        assertFalse(bar.hasAnnotation(NativeMethod.class));
+        
+        assertTrue(result.nativeMethods().contains(foo));
+        assertFalse(result.nativeMethods().contains(bar));
     }
     
     
@@ -271,8 +272,10 @@ public class CallGraphBuilderTest {
         SimpleIgnoreSet ignores = new SimpleIgnoreSet();
         ignores.addMethod(new MethodPath(CallToIgnoredMethod.class, "uninteresting", "()V"));
         
-        CallGraph cg = build(ignores, new MethodPath(CallToIgnoredMethod.class, "foo", "()V"));
+        BasicCallGraphAnalysis result = build(ignores, new MethodPath(CallToIgnoredMethod.class, "foo", "()V"));
+        CallGraph cg = result.callGraph();
         MethodNode foo = cg.getClass(CallToIgnoredMethod.class).getMethod("foo", mt("()V"));
+        
         assertTrue(foo.getOutgoingCalls().isEmpty());
         assertFalse(cg.getClass(CallToIgnoredMethod.class).hasMethod("uninteresting", mt("()V")));
         assertFalse(cg.hasClass(Simple.class));
@@ -295,7 +298,7 @@ public class CallGraphBuilderTest {
         SimpleIgnoreSet ignores = new SimpleIgnoreSet();
         ignores.addClass(IgnoredClass.class);
         
-        CallGraph cg = build(ignores, new MethodPath(CallToIgnoredClass.class, "call", "()V"));
+        CallGraph cg = buildCg(ignores, new MethodPath(CallToIgnoredClass.class, "call", "()V"));
         MethodNode call = cg.getClass(CallToIgnoredClass.class).getMethod("call", mt("()V"));
         
         assertFalse(cg.hasClass(IgnoredClass.class));
@@ -307,7 +310,7 @@ public class CallGraphBuilderTest {
         SimpleIgnoreSet ignores = new SimpleIgnoreSet();
         ignores.addClass(Super.class);
         
-        CallGraph cg = build(ignores, new MethodPath(Sub.class, "foo", "()V"));
+        CallGraph cg = buildCg(ignores, new MethodPath(Sub.class, "foo", "()V"));
         assertFalse(cg.hasClass(Super.class));
         assertFalse(cg.getClass(Sub.class).hasMethod("invokeFoo", mt("()V")));
         assertTrue(cg.getClass(Sub.class).hasMethod("foo", mt("()V")));
@@ -316,11 +319,19 @@ public class CallGraphBuilderTest {
     
     
     
-    private CallGraph build(MethodPath... methods) {
+    private CallGraph buildCg(MethodPath... methods) {
+        return build(methods).callGraph();
+    }
+    
+    private CallGraph buildCg(IgnoreSet ignores, MethodPath... methods) {
+        return build(ignores, methods).callGraph();
+    }
+    
+    private BasicCallGraphAnalysis build(MethodPath... methods) {
         return build(EmptyIgnoreSet.getInstance(), methods);
     }
     
-    private CallGraph build(IgnoreSet ignores, MethodPath... methods) {
+    private BasicCallGraphAnalysis build(IgnoreSet ignores, MethodPath... methods) {
         Set<MethodPath> methodSet = new HashSet<MethodPath>(Arrays.asList(methods));
         try {
             return CallGraphBuilder.buildCallGraph(new DefaultClassFileLoader(), methodSet, ignores);

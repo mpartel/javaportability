@@ -10,13 +10,8 @@ import org.objectweb.asm.MethodType;
 import org.objectweb.asm.Type;
 
 public class CallGraph {
-    public interface ClassAnnotation {
-    }
     
-    public interface MethodAnnotation {
-    }
-    
-    public class ClassNode extends AbstractHavingAnnotations<ClassAnnotation> {
+    public class ClassNode {
         private String name;          // The "internal name" of the class
         private ClassNode superclass; // Possibly null
         private List<MethodNode> methods;
@@ -96,7 +91,7 @@ public class CallGraph {
         }
     }
     
-    public class MethodNode extends AbstractHavingAnnotations<MethodAnnotation> {
+    public class MethodNode {
         private String name;
         private MethodType type;
         private ClassNode owner;
