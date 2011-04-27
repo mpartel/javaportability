@@ -28,6 +28,37 @@ public class StrictfpSafetyAnalyzerTest {
     }
     
     @Test
+    public void testNoUnsafeMethod() {
+        ClassNode a = cg.addClass("A", null);
+        MethodNode m1 = a.addMethod("m1", mt);
+        MethodNode m2 = a.addMethod("m2", mt);
+        
+        cg.addCall(m1, m2);
+        cg.addCall(m2, m1);
+        
+        basic.localFpMathMethods().add(m2);
+        basic.strictfpMethods().add(m2);
+        
+        analyzer.analyzeMethod(m1);
+        StrictfpSafetyAnalysis result = analyzer.getResult();
+        
+        assertTrue(result.unsafeCallPaths().isEmpty());
+    }
+    
+    @Test
+    public void testAnalyzingUnsafeMethodDirectly() {
+        ClassNode a = cg.addClass("A", null);
+        MethodNode m1 = a.addMethod("m1", mt);
+        
+        basic.localFpMathMethods().add(m1);
+        
+        analyzer.analyzeMethod(m1);
+        StrictfpSafetyAnalysis result = analyzer.getResult();
+        
+        assertEquals(CallPath.make(m1), result.unsafeCallPaths().get(m1));
+    }
+    
+    @Test
     public void testCyclicCallsInvolvingUnsafeMethod() {
         ClassNode a = cg.addClass("A", null);
         MethodNode m1 = a.addMethod("m1", mt);
@@ -50,5 +81,4 @@ public class StrictfpSafetyAnalyzerTest {
         assertEquals(CallPath.make(m1, m2, m3, unsafe), result.unsafeCallPaths().get(m1));
     }
     
-    //TODO: more
 }
