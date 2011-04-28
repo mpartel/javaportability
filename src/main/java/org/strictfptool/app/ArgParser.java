@@ -15,7 +15,8 @@ public class ArgParser {
     
     public String getUsage() {
         return
-            "Usage: java -jar strictfp-tool.jar [options] target [target...]\n" +
+            "Usage: java -jar strictfp-tool.jar verify [options] target [target...]\n" +
+            "\n" +
             "\n" +
             "Targets can be class names or methods denoted \"pkg.Class::method\"\n" +
             "\n" +
@@ -27,6 +28,7 @@ public class ArgParser {
     
     private static class Impl {
         private Settings settings;
+        private String command;
         private LinkedList<String> remainingArgs;
         
         private Impl(String[] args) {
@@ -35,24 +37,45 @@ public class ArgParser {
         }
         
         private void processArgs() {
+            if (haveHelpArg()) {
+                settings.help = true;
+                return;
+            }
+            
+            requireCommand();
+            
             while (!remainingArgs.isEmpty()) {
                 String arg = remainingArgs.removeFirst();
-                if (isOneOf(arg, "-h", "--help")) {
-                    settings.help = true;
-                } else if (isOneOf(arg, "-p", "--path")) {
+                if (isOneOf(arg, "-p", "--path")) {
                     processPathArg();
                 } else {
                     settings.targets.add(arg);
                 }
             }
         }
-    
-        private void checkUsage() {
-            if (!settings.help) {
-                if (settings.targets.isEmpty()) {
-                    throw new BadUsageException("No targets given");
+        
+        private boolean haveHelpArg() {
+            for (String arg : remainingArgs) {
+                if (isOneOf(arg, "-h", "--help")) {
+                    return true;
                 }
             }
+            return false;
+        }
+
+        private void requireCommand() {
+            command = requireArg("Command argument required");
+            String[] validCommands = {"verify"};
+            if (!Arrays.asList(validCommands).contains(command)) {
+                throw new BadUsageException("Invalid command '" + command + "'");
+            }
+        }
+        
+        private String requireArg(String msg) {
+            if (remainingArgs.isEmpty()) {
+                throw new BadUsageException(msg);
+            }
+            return remainingArgs.removeFirst();
         }
     
         private void processPathArg() {
@@ -69,13 +92,6 @@ public class ArgParser {
             }
         }
 
-        private String requireArg(String msg) {
-            if (remainingArgs.isEmpty()) {
-                throw new BadUsageException(msg);
-            }
-            return remainingArgs.removeFirst();
-        }
-    
         private boolean isOneOf(String arg, String... variants) {
             for (String s : variants) {
                 if (arg.equals(s)) {
@@ -83,6 +99,14 @@ public class ArgParser {
                 }
             }
             return false;
+        }
+        
+        private void checkUsage() {
+            if (!settings.help) {
+                if (settings.targets.isEmpty()) {
+                    throw new BadUsageException("No targets given");
+                }
+            }
         }
     }
 }
