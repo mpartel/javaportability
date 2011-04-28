@@ -23,6 +23,7 @@ import org.strictfptool.misc.MethodPath;
 
 public class CallGraphBuilder extends EmptyVisitor {
 
+    private boolean traceEnabled;
     private CallGraph callGraph;
     private BasicCallGraphAnalysis result;
     private ClassFileLoader classFileLoader;
@@ -84,6 +85,10 @@ public class CallGraphBuilder extends EmptyVisitor {
         this.classDiscoveryQueue = new LinkedList<String>();
         this.methodQueue = new LinkedList<MethodPath>();
         this.unanalyzedCalls = new HashMap<MethodNode, List<MethodPath>>();
+    }
+    
+    public void setDebugTrace(boolean enabled) {
+        traceEnabled = enabled;
     }
     
     public void addRootClass(String className) throws Exception {
@@ -390,7 +395,9 @@ public class CallGraphBuilder extends EmptyVisitor {
         }
     }
     
-    private static final void trace(String msg) {
-        //System.out.println(msg);
+    private final void trace(String msg) {
+        if (traceEnabled) {
+            System.out.println(msg);
+        }
     }
 }

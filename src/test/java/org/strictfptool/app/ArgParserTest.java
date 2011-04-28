@@ -26,6 +26,12 @@ public class ArgParserTest {
     }
     
     @Test
+    public void testDebug() {
+        assertTrue(parseVerifyArgs("--debug", "Target").trace);
+        assertFalse(parseVerifyArgs("Target").trace);
+    }
+    
+    @Test
     public void testSearchPath() {
         List<String> sp = parseVerifyArgs("-p", "foo/foo/:bar.jar", "Target").searchPath;
         assertEquals(2, sp.size());
