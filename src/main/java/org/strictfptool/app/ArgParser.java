@@ -1,5 +1,6 @@
 package org.strictfptool.app;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.LinkedList;
 
@@ -57,8 +58,17 @@ public class ArgParser {
         private void processPathArg() {
             String[] parts = requireArg("Missing classpath").split(":");
             settings.searchPath = Arrays.asList(parts);
+            checkSearchPath();
         }
         
+        private void checkSearchPath() {
+            for (String s : settings.searchPath) {
+                if (!s.endsWith(".jar") && !s.endsWith("/") && !s.endsWith(File.separator)) {
+                    throw new BadUsageException("Search path element '" + s + "' should have ended with '.jar' or a slash");
+                }
+            }
+        }
+
         private String requireArg(String msg) {
             if (remainingArgs.isEmpty()) {
                 throw new BadUsageException(msg);

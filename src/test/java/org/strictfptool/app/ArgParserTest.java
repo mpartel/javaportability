@@ -26,6 +26,11 @@ public class ArgParserTest {
         assertEquals("bar.jar", sp.get(1));
     }
     
+    @Test(expected = BadUsageException.class)
+    public void testSearchPathEntryMissingTrailingSlashAndJarExtension() {
+        parseArgs("-p", "foo/foo:bar.jar", "Target");
+    }
+    
     @Test
     public void testCombined() {
         Settings settings = parseArgs("--path", "xoo/foo.jar", "One", "Two::method");
