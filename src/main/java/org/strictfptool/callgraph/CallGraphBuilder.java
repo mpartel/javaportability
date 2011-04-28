@@ -27,22 +27,52 @@ public class CallGraphBuilder extends EmptyVisitor {
     private BasicCallGraphAnalysis result;
     private ClassFileLoader classFileLoader;
     private IgnoreSet ignoreSet;
-    private Queue<Root> rootQueue;
     private Queue<String> classDiscoveryQueue;
     private Queue<MethodPath> methodQueue;
     private HashMap<MethodNode, List<MethodPath>> unanalyzedCalls;
     
-    private interface Root {}
-    private class MethodRoot implements Root {
-        public MethodPath methodPath;
-        public MethodRoot(MethodPath methodPath) {
-            this.methodPath = methodPath;
+    private static class Root {
+        private static final Pattern ACCEPT_ALL = Pattern.compile(".*");
+        private final String className;
+        private final Pattern methodPattern;
+        private final Pattern methodDescPattern;
+        
+        public Root(String className) {
+            this(className, ACCEPT_ALL);
         }
-    }
-    private class ClassRoot implements Root {
-        public String className;
-        public ClassRoot(String className) {
+        
+        public Root(String className, String methodName) {
+            this(className, exactMatcher(methodName));
+        }
+
+        public Root(MethodPath methodPath) {
+            this(methodPath.getOwner(), exactMatcher(methodPath.getName()), exactMatcher(methodPath.getDesc()));
+        }
+        
+        public Root(String className, Pattern methodPattern) {
+            this(className, methodPattern, ACCEPT_ALL);
+        }
+        
+        public Root(String className, Pattern methodPattern, Pattern methodDescPattern) {
             this.className = className;
+            this.methodPattern = methodPattern;
+            this.methodDescPattern = methodDescPattern;
+        }
+        
+        private static Pattern exactMatcher(String methodName) {
+            return Pattern.compile(Pattern.quote(methodName));
+        }
+        
+        public String getClassName() {
+            return className;
+        }
+        
+        public Pattern getMethodPattern() {
+            return methodPattern;
+        }
+        
+        public Pattern getMethodDescPattern() {
+            return methodDescPattern;
         }
     }
     
@@ -51,19 +81,44 @@ public class CallGraphBuilder extends EmptyVisitor {
         this.result = new BasicCallGraphAnalysis(callGraph);
         this.classFileLoader = classFileLoader;
         this.ignoreSet = ignoreSet;
-        this.rootQueue = new LinkedList<Root>();
         this.classDiscoveryQueue = new LinkedList<String>();
         this.methodQueue = new LinkedList<MethodPath>();
         this.unanalyzedCalls = new HashMap<MethodNode, List<MethodPath>>();
     }
     
-    public void addRootMethod(MethodPath method) throws ClassNotFoundException, IOException {
-        this.rootQueue.add(new MethodRoot(method));
-        mainLoop();
+    public void addRootClass(String className) throws Exception {
+        addRoot(new Root(className));
     }
     
-    public void addRootClass(String internalName) throws ClassNotFoundException, IOException {
-        this.rootQueue.add(new ClassRoot(internalName));
+    public void addRootClass(Class<?> cls) throws Exception {
+        addRootClass(cls.getName().replace('.', '/'));
+    }
+    
+    public void addRootMethod(MethodPath methodPath) throws Exception {
+        addRoot(new Root(methodPath));
+    }
+    
+    public void addRootMethod(String className, String methodName) throws Exception {
+        addRoot(new Root(className, methodName));
+    }
+    
+    public void addRootMethods(String className, Pattern methodPattern) throws Exception {
+        addRoot(new Root(className, methodPattern));
+    }
+    
+    private void addRoot(Root root) throws Exception {
+        String className = root.getClassName();
+        try {
+            if (!ignoreSet.containsClass(className)) {
+                if (classNotYetDiscovered(className)) {
+                    discoverClass(className);
+                }
+                enqueueMethodsInRoot(root);
+            }
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException("Class not found: " + className, e);
+        }
+        
         mainLoop();
     }
     
@@ -78,8 +133,6 @@ public class CallGraphBuilder extends EmptyVisitor {
                     workClassDiscoveryQueue();
                 } else if (!methodQueue.isEmpty()) {
                     workMethodQueue();
-                } else if (!rootQueue.isEmpty()) {
-                    workRootQueue();
                 } else {
                     break;
                 }
@@ -102,25 +155,23 @@ public class CallGraphBuilder extends EmptyVisitor {
     
     private void workMethodQueue() {
         MethodPath m = methodQueue.peek();
+        trace("Trying to process " + m);
         if (tryProcessMethod(m)) {
             methodQueue.remove();
         }
     }
     
-    private void workRootQueue() {
-        Root root = rootQueue.peek();
-        if (root instanceof MethodRoot) {
-            rootQueue.remove();
-            methodQueue.add(((MethodRoot)root).methodPath);
-        } else if (root instanceof ClassRoot) {
-            String className = ((ClassRoot)root).className;
-            if (!callGraph.hasClass(className)) {
-                classDiscoveryQueue.add(className);
-            } else {
-                rootQueue.remove();
-                for (MethodNode method : callGraph.getClass(className).getMethods()) {
-                    methodQueue.add(method.getPath());
-                }
+    private boolean classNotYetDiscovered(String className) {
+        return !callGraph.hasClass(className) && !ignoreSet.containsClass(className);
+    }
+    
+    private void enqueueMethodsInRoot(Root root) {
+        for (MethodNode method : callGraph.getClass(root.getClassName()).getMethodsIncludingInherited()) {
+            boolean nameMatches = root.getMethodPattern().matcher(method.getName()).matches();
+            boolean descMatches = root.getMethodDescPattern().matcher(method.getDesc()).matches();
+            if (nameMatches && descMatches) {
+                methodQueue.add(method.getPath());
+                trace("Enqueued method " + method);
             }
         }
     }
@@ -179,7 +230,7 @@ public class CallGraphBuilder extends EmptyVisitor {
         
         int count = 0;
         for (MethodPath callee : calls) {
-            if (!callGraph.hasClass(callee.getOwner()) && !ignoreSet.containsClass(callee.getOwner())) {
+            if (classNotYetDiscovered(callee.getOwner())) {
                 classDiscoveryQueue.add(callee.getOwner());
                 count += 1;
             }

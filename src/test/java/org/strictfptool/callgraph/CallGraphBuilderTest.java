@@ -1,8 +1,8 @@
 package org.strictfptool.callgraph;
 
 import static org.junit.Assert.*;
-
-import java.io.IOException;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.*;
 
 import org.junit.Test;
 import org.objectweb.asm.MethodType;
@@ -12,6 +12,7 @@ import org.strictfptool.callgraph.CallGraph.MethodNode;
 import org.strictfptool.ignoreset.EmptyIgnoreSet;
 import org.strictfptool.ignoreset.IgnoreSet;
 import org.strictfptool.ignoreset.SimpleIgnoreSet;
+import org.strictfptool.loaders.ClassFileLoader;
 import org.strictfptool.loaders.DefaultClassFileLoader;
 import org.strictfptool.misc.MethodPath;
 
@@ -44,9 +45,32 @@ public class CallGraphBuilderTest {
         assertNoCall(three, one);
     }
     
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNonexistentRootMethods() {
         buildCg(new MethodPath(Simple.class, "one", "()V"));
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testNonexistentRootClasses() throws Exception {
+        ClassFileLoader loader = mock(ClassFileLoader.class);
+        when(loader.loadClass(any(String.class))).thenThrow(new ClassNotFoundException());
+        
+        CallGraphBuilder builder = new CallGraphBuilder(loader, EmptyIgnoreSet.getInstance());
+        builder.addRootClass("Nonexistent");
+        builder.getResult();
+    }
+    
+    @Test
+    public void testIgnoredRootClasses() throws Exception {
+        ClassFileLoader loader = mock(ClassFileLoader.class);
+        when(loader.loadClass(any(String.class))).thenReturn(null);
+        SimpleIgnoreSet ignores = new SimpleIgnoreSet();
+        ignores.addClass(Simple.class);
+        
+        CallGraphBuilder builder = new CallGraphBuilder(loader, ignores);
+        builder.addRootClass(Simple.class);
+        
+        assertFalse(builder.getResult().callGraph().hasClass(Simple.class));
     }
     
     
@@ -145,7 +169,9 @@ public class CallGraphBuilderTest {
             super(x, x);
         }
         
+        @Override
         public void foo() {
+            super.foo();
         }
     }
     
@@ -154,6 +180,7 @@ public class CallGraphBuilderTest {
         CallGraph cg = buildCg(new MethodPath(Sub.class, "<init>", "(I)V"));
         MethodNode superCtor = cg.getClass(Super.class).getMethod("<init>", mt("(II)V"));
         MethodNode subCtor = cg.getClass(Sub.class).getMethod("<init>", mt("(I)V"));
+        
         assertCall(subCtor, superCtor);
         assertNoCall(superCtor, subCtor);
     }
@@ -164,8 +191,19 @@ public class CallGraphBuilderTest {
         MethodNode superInvokeFoo = cg.getClass(Super.class).getMethod("invokeFoo", mt("()V"));
         MethodNode superFoo = cg.getClass(Super.class).getMethod("foo", mt("()V"));
         MethodNode subFoo = cg.getClass(Sub.class).getMethod("foo", mt("()V"));
+        
         assertCall(superInvokeFoo, superFoo);
         assertNoCall(superInvokeFoo, subFoo);
+    }
+    
+    @Test
+    public void testSuperCallInMethod() {
+        CallGraph cg = buildCg(new MethodPath(Sub.class, "foo", "()V"));
+        MethodNode superFoo = cg.getClass(Super.class).getMethod("foo", mt("()V"));
+        MethodNode subFoo = cg.getClass(Sub.class).getMethod("foo", mt("()V"));
+        
+        assertCall(subFoo, superFoo);
+        assertNoCall(superFoo, subFoo);
     }
     
     
@@ -359,9 +397,9 @@ public class CallGraphBuilderTest {
                 builder.addRootMethod(method);
             }
             return builder.getResult();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -373,9 +411,9 @@ public class CallGraphBuilderTest {
                 builder.addRootClass(cls.getName().replace('.', '/'));
             }
             return builder.getResult();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

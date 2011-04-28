@@ -82,8 +82,18 @@ public class CallGraph {
             return tryGetLocalMethod(name, type) != null;
         }
         
-        public List<MethodNode> getMethods() {
+        public List<MethodNode> getLocalMethods() {
             return Collections.unmodifiableList(methods);
+        }
+        
+        public List<MethodNode> getMethodsIncludingInherited() {
+            List<MethodNode> result = new ArrayList<MethodNode>();
+            ClassNode cls = this;
+            while (cls != null) {
+                result.addAll(cls.methods);
+                cls = cls.superclass;
+            }
+            return result;
         }
         
         @Override
@@ -119,8 +129,12 @@ public class CallGraph {
             return owner;
         }
         
+        public String getDesc() {
+            return type.getDescriptor();
+        }
+        
         public MethodPath getPath() {
-            return new MethodPath(owner.getName(), name, type.getDescriptor());
+            return new MethodPath(owner.getName(), name, getDesc());
         }
         
         public List<CallSite> getOutgoingCalls() {
@@ -133,7 +147,7 @@ public class CallGraph {
         
         @Override
         public String toString() {
-            return "method " + owner.getName() + " :: " + name + " " + type.getDescriptor();
+            return "method " + owner.getName() + " :: " + name + " " + getDesc();
         }
     }
     

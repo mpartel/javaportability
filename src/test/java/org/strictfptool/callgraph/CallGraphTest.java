@@ -51,7 +51,7 @@ public class CallGraphTest {
         ClassNode a = cg.addClass("A", null);
         a.addMethod("foo", new MethodType("()V"));
         a.addMethod("foo", new MethodType("()I"));
-        assertEquals(2, a.getMethods().size());
+        assertEquals(2, a.getLocalMethods().size());
     }
     
     @Test
@@ -60,7 +60,11 @@ public class CallGraphTest {
         ClassNode a = cg.addClass("A", null);
         ClassNode b = cg.addClass("B", a);
         MethodNode m = a.addMethod("foo", new MethodType("()V"));
+        
         assertSame(m, b.getMethod("foo", new MethodType("()V")));
+        
+        assertEquals(1, b.getMethodsIncludingInherited().size());
+        assertSame(m, b.getMethodsIncludingInherited().get(0));
     }
     
     @Test
@@ -72,6 +76,10 @@ public class CallGraphTest {
         MethodNode m2 = b.addMethod("foo", new MethodType("()V"));
         assertSame(m1, a.getMethod("foo", new MethodType("()V")));
         assertSame(m2, b.getMethod("foo", new MethodType("()V")));
+        
+        assertEquals(2, b.getMethodsIncludingInherited().size());
+        assertTrue(b.getMethodsIncludingInherited().contains(m1));
+        assertTrue(b.getMethodsIncludingInherited().contains(m2));
     }
     
 }
