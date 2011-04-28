@@ -374,6 +374,10 @@ public class CallGraphBuilderTest {
     }
     
     
+    // TODO: interfaces and abstract classes!
+    
+    
+    
     private CallGraph buildCg(MethodPath... methods) {
         return build(methods).callGraph();
     }
