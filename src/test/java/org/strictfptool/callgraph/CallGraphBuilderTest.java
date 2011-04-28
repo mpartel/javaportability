@@ -335,6 +335,8 @@ public class CallGraphBuilderTest {
         Set<MethodPath> methodSet = new HashSet<MethodPath>(Arrays.asList(methods));
         try {
             return CallGraphBuilder.buildCallGraph(new DefaultClassFileLoader(), methodSet, ignores);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

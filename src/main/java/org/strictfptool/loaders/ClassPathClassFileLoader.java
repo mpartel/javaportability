@@ -26,7 +26,7 @@ public class ClassPathClassFileLoader implements ClassFileLoader {
     }
     
     @Override
-    public ClassReader loadClass(String internalName) throws IOException {
+    public ClassReader loadClass(String internalName) throws ClassNotFoundException, IOException {
         InputStream inputStream = null;
         for (String location : searchPath) {
             if (location.endsWith(".jar")) {
@@ -41,7 +41,7 @@ public class ClassPathClassFileLoader implements ClassFileLoader {
         if (inputStream != null) {
             return new ClassReader(inputStream);
         } else {
-            throw new IOException("Could not find class: " + internalName); //TODO: another exception type
+            throw new ClassNotFoundException("Could not find class: " + internalName);
         }
     }
 

@@ -33,11 +33,11 @@ public class CallGraphBuilder extends EmptyVisitor {
     private Queue<MethodPath> methodQueue;
     private HashMap<MethodNode, List<MethodPath>> unanalyzedCalls;
     
-    public static BasicCallGraphAnalysis buildCallGraph(ClassFileLoader loader, Set<MethodPath> roots) throws IOException {
+    public static BasicCallGraphAnalysis buildCallGraph(ClassFileLoader loader, Set<MethodPath> roots) throws ClassNotFoundException, IOException {
         return buildCallGraph(loader, roots, EmptyIgnoreSet.getInstance());
     }
     
-    public static BasicCallGraphAnalysis buildCallGraph(ClassFileLoader loader, Set<MethodPath> roots, IgnoreSet ignoreSet) throws IOException {
+    public static BasicCallGraphAnalysis buildCallGraph(ClassFileLoader loader, Set<MethodPath> roots, IgnoreSet ignoreSet) throws ClassNotFoundException, IOException {
         CallGraph cg = new CallGraph();
         CallGraphBuilder builder = new CallGraphBuilder(cg, loader, roots, ignoreSet);
         builder.mainLoop();
@@ -54,7 +54,7 @@ public class CallGraphBuilder extends EmptyVisitor {
         this.unanalyzedCalls = new HashMap<MethodNode, List<MethodPath>>();
     }
     
-    private void mainLoop() throws IOException {
+    private void mainLoop() throws ClassNotFoundException, IOException {
         try {
             while (!classQueue.isEmpty() || !methodQueue.isEmpty()) {
                 if (!classQueue.isEmpty()) {
@@ -64,13 +64,15 @@ public class CallGraphBuilder extends EmptyVisitor {
                 }
             }
         } catch (CheckedExceptionWrapper e) {
-            if (e.getCause() instanceof IOException) {
+            if (e.getCause() instanceof ClassNotFoundException) {
+                throw (ClassNotFoundException)e.getCause();
+            } else if (e.getCause() instanceof IOException) {
                 throw (IOException)e.getCause();
             }
         }
     }
 
-    private void workClassQueue() throws IOException {
+    private void workClassQueue() throws ClassNotFoundException, IOException {
         String internalName = classQueue.remove();
         if (!callGraph.hasClass(internalName)) {
             discoverClass(internalName);
@@ -84,7 +86,7 @@ public class CallGraphBuilder extends EmptyVisitor {
         }
     }
     
-    private ClassNode discoverClass(String internalName) throws IOException {
+    private ClassNode discoverClass(String internalName) throws ClassNotFoundException, IOException {
         if (!isBasicArrayClass(internalName) && !ignoreSet.containsClass(internalName)) {
             trace("Discovering class " + internalName);
             
@@ -194,6 +196,8 @@ public class CallGraphBuilder extends EmptyVisitor {
                 } else {
                     try {
                         superNode = discoverClass(superName);
+                    } catch (ClassNotFoundException e) {
+                        throw new CheckedExceptionWrapper(e);
                     } catch (IOException e) {
                         throw new CheckedExceptionWrapper(e);
                     }
