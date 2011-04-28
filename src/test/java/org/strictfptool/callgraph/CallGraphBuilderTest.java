@@ -3,9 +3,6 @@ package org.strictfptool.callgraph;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.junit.Test;
 import org.objectweb.asm.MethodType;
@@ -332,9 +329,12 @@ public class CallGraphBuilderTest {
     }
     
     private BasicCallGraphAnalysis build(IgnoreSet ignores, MethodPath... methods) {
-        Set<MethodPath> methodSet = new HashSet<MethodPath>(Arrays.asList(methods));
         try {
-            return CallGraphBuilder.buildCallGraph(new DefaultClassFileLoader(), methodSet, ignores);
+            CallGraphBuilder builder = new CallGraphBuilder(new DefaultClassFileLoader(), ignores);
+            for (MethodPath method : methods) {
+                builder.addRootMethod(method);
+            }
+            return builder.getResult();
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {

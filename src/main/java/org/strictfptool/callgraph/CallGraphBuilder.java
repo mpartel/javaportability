@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.objectweb.asm.ClassReader;
@@ -17,7 +16,6 @@ import org.objectweb.asm.commons.EmptyVisitor;
 import org.strictfptool.analysis.results.BasicCallGraphAnalysis;
 import org.strictfptool.callgraph.CallGraph.ClassNode;
 import org.strictfptool.callgraph.CallGraph.MethodNode;
-import org.strictfptool.ignoreset.EmptyIgnoreSet;
 import org.strictfptool.ignoreset.IgnoreSet;
 import org.strictfptool.loaders.ClassFileLoader;
 import org.strictfptool.misc.CheckedExceptionWrapper;
@@ -33,25 +31,23 @@ public class CallGraphBuilder extends EmptyVisitor {
     private Queue<MethodPath> methodQueue;
     private HashMap<MethodNode, List<MethodPath>> unanalyzedCalls;
     
-    public static BasicCallGraphAnalysis buildCallGraph(ClassFileLoader loader, Set<MethodPath> roots) throws ClassNotFoundException, IOException {
-        return buildCallGraph(loader, roots, EmptyIgnoreSet.getInstance());
-    }
-    
-    public static BasicCallGraphAnalysis buildCallGraph(ClassFileLoader loader, Set<MethodPath> roots, IgnoreSet ignoreSet) throws ClassNotFoundException, IOException {
-        CallGraph cg = new CallGraph();
-        CallGraphBuilder builder = new CallGraphBuilder(cg, loader, roots, ignoreSet);
-        builder.mainLoop();
-        return builder.result;
-    }
-    
-    private CallGraphBuilder(CallGraph callGraph, ClassFileLoader classFileLoader, Set<MethodPath> roots, IgnoreSet ignoreSet) {
-        this.callGraph = callGraph;
+    public CallGraphBuilder(ClassFileLoader classFileLoader, IgnoreSet ignoreSet) {
+        this.callGraph = new CallGraph();
         this.result = new BasicCallGraphAnalysis(callGraph);
         this.classFileLoader = classFileLoader;
         this.ignoreSet = ignoreSet;
         this.classQueue = new LinkedList<String>();
-        this.methodQueue = new LinkedList<MethodPath>(roots);
+        this.methodQueue = new LinkedList<MethodPath>();
         this.unanalyzedCalls = new HashMap<MethodNode, List<MethodPath>>();
+    }
+    
+    public void addRootMethod(MethodPath method) throws ClassNotFoundException, IOException {
+        this.methodQueue.add(method);
+        mainLoop();
+    }
+    
+    public BasicCallGraphAnalysis getResult() {
+        return result;
     }
     
     private void mainLoop() throws ClassNotFoundException, IOException {
