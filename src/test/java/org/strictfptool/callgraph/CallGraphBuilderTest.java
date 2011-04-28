@@ -84,6 +84,10 @@ public class CallGraphBuilderTest {
         public static void foo() {
             new CyclicThree().foo();
         }
+        
+        public static void bar() {
+            new CyclicThree().foo();
+        }
     }
     
     public static class CyclicThree {
@@ -104,6 +108,23 @@ public class CallGraphBuilderTest {
         assertNoCall(two, one);
         assertNoCall(three, two);
         assertNoCall(one, three);
+    }
+    
+    @Test
+    public void testUsingRootClassesAnalyzesCorrectMethods() {
+        BasicCallGraphAnalysis result1 = build(CyclicOne.class);
+        BasicCallGraphAnalysis result2 = build(CyclicTwo.class);
+        CallGraph cg1 = result1.callGraph();
+        CallGraph cg2 = result2.callGraph();
+        MethodNode cg1Foo = cg1.getClass(CyclicTwo.class).getMethod("foo", mt("()V"));
+        MethodNode cg1Bar = cg1.getClass(CyclicTwo.class).getMethod("bar", mt("()V"));
+        MethodNode cg2Foo = cg2.getClass(CyclicTwo.class).getMethod("foo", mt("()V"));
+        MethodNode cg2Bar = cg2.getClass(CyclicTwo.class).getMethod("bar", mt("()V"));
+        
+        assertTrue(result1.basicAnalysisDoneMethods().contains(cg1Foo));
+        assertFalse(result1.basicAnalysisDoneMethods().contains(cg1Bar));
+        assertTrue(result2.basicAnalysisDoneMethods().contains(cg2Foo));
+        assertTrue(result2.basicAnalysisDoneMethods().contains(cg2Bar));
     }
     
     
@@ -315,7 +336,6 @@ public class CallGraphBuilderTest {
     }
     
     
-    
     private CallGraph buildCg(MethodPath... methods) {
         return build(methods).callGraph();
     }
@@ -328,11 +348,29 @@ public class CallGraphBuilderTest {
         return build(EmptyIgnoreSet.getInstance(), methods);
     }
     
+    private BasicCallGraphAnalysis build(Class<?>... classes) {
+        return build(EmptyIgnoreSet.getInstance(), classes);
+    }
+    
     private BasicCallGraphAnalysis build(IgnoreSet ignores, MethodPath... methods) {
         try {
             CallGraphBuilder builder = new CallGraphBuilder(new DefaultClassFileLoader(), ignores);
             for (MethodPath method : methods) {
                 builder.addRootMethod(method);
+            }
+            return builder.getResult();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    private BasicCallGraphAnalysis build(IgnoreSet ignores, Class<?>... classes) {
+        try {
+            CallGraphBuilder builder = new CallGraphBuilder(new DefaultClassFileLoader(), ignores);
+            for (Class<?> cls : classes) {
+                builder.addRootClass(cls.getName().replace('.', '/'));
             }
             return builder.getResult();
         } catch (ClassNotFoundException e) {

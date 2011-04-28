@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.objectweb.asm.MethodType;
 import org.objectweb.asm.Type;
+import org.strictfptool.misc.MethodPath;
 
 public class CallGraph {
     
@@ -116,6 +117,10 @@ public class CallGraph {
         
         public ClassNode getOwner() {
             return owner;
+        }
+        
+        public MethodPath getPath() {
+            return new MethodPath(owner.getName(), name, type.getDescriptor());
         }
         
         public List<CallSite> getOutgoingCalls() {

@@ -27,22 +27,43 @@ public class CallGraphBuilder extends EmptyVisitor {
     private BasicCallGraphAnalysis result;
     private ClassFileLoader classFileLoader;
     private IgnoreSet ignoreSet;
-    private Queue<String> classQueue;
+    private Queue<Root> rootQueue;
+    private Queue<String> classDiscoveryQueue;
     private Queue<MethodPath> methodQueue;
     private HashMap<MethodNode, List<MethodPath>> unanalyzedCalls;
+    
+    private interface Root {}
+    private class MethodRoot implements Root {
+        public MethodPath methodPath;
+        public MethodRoot(MethodPath methodPath) {
+            this.methodPath = methodPath;
+        }
+    }
+    private class ClassRoot implements Root {
+        public String className;
+        public ClassRoot(String className) {
+            this.className = className;
+        }
+    }
     
     public CallGraphBuilder(ClassFileLoader classFileLoader, IgnoreSet ignoreSet) {
         this.callGraph = new CallGraph();
         this.result = new BasicCallGraphAnalysis(callGraph);
         this.classFileLoader = classFileLoader;
         this.ignoreSet = ignoreSet;
-        this.classQueue = new LinkedList<String>();
+        this.rootQueue = new LinkedList<Root>();
+        this.classDiscoveryQueue = new LinkedList<String>();
         this.methodQueue = new LinkedList<MethodPath>();
         this.unanalyzedCalls = new HashMap<MethodNode, List<MethodPath>>();
     }
     
     public void addRootMethod(MethodPath method) throws ClassNotFoundException, IOException {
-        this.methodQueue.add(method);
+        this.rootQueue.add(new MethodRoot(method));
+        mainLoop();
+    }
+    
+    public void addRootClass(String internalName) throws ClassNotFoundException, IOException {
+        this.rootQueue.add(new ClassRoot(internalName));
         mainLoop();
     }
     
@@ -52,11 +73,15 @@ public class CallGraphBuilder extends EmptyVisitor {
     
     private void mainLoop() throws ClassNotFoundException, IOException {
         try {
-            while (!classQueue.isEmpty() || !methodQueue.isEmpty()) {
-                if (!classQueue.isEmpty()) {
-                    workClassQueue();
-                } else {
+            while (true) {
+                if (!classDiscoveryQueue.isEmpty()) {
+                    workClassDiscoveryQueue();
+                } else if (!methodQueue.isEmpty()) {
                     workMethodQueue();
+                } else if (!rootQueue.isEmpty()) {
+                    workRootQueue();
+                } else {
+                    break;
                 }
             }
         } catch (CheckedExceptionWrapper e) {
@@ -68,8 +93,8 @@ public class CallGraphBuilder extends EmptyVisitor {
         }
     }
 
-    private void workClassQueue() throws ClassNotFoundException, IOException {
-        String internalName = classQueue.remove();
+    private void workClassDiscoveryQueue() throws ClassNotFoundException, IOException {
+        String internalName = classDiscoveryQueue.remove();
         if (!callGraph.hasClass(internalName)) {
             discoverClass(internalName);
         }
@@ -79,6 +104,24 @@ public class CallGraphBuilder extends EmptyVisitor {
         MethodPath m = methodQueue.peek();
         if (tryProcessMethod(m)) {
             methodQueue.remove();
+        }
+    }
+    
+    private void workRootQueue() {
+        Root root = rootQueue.peek();
+        if (root instanceof MethodRoot) {
+            rootQueue.remove();
+            methodQueue.add(((MethodRoot)root).methodPath);
+        } else if (root instanceof ClassRoot) {
+            String className = ((ClassRoot)root).className;
+            if (!callGraph.hasClass(className)) {
+                classDiscoveryQueue.add(className);
+            } else {
+                rootQueue.remove();
+                for (MethodNode method : callGraph.getClass(className).getMethods()) {
+                    methodQueue.add(method.getPath());
+                }
+            }
         }
     }
     
@@ -104,7 +147,7 @@ public class CallGraphBuilder extends EmptyVisitor {
     private boolean tryProcessMethod(MethodPath methodPath) {
         if (!callGraph.hasClass(methodPath.getOwner())) {
             trace("Class owning method " + methodPath + " not yet discovered");
-            classQueue.add(methodPath.getOwner());
+            classDiscoveryQueue.add(methodPath.getOwner());
             return false;
         }
         
@@ -137,7 +180,7 @@ public class CallGraphBuilder extends EmptyVisitor {
         int count = 0;
         for (MethodPath callee : calls) {
             if (!callGraph.hasClass(callee.getOwner()) && !ignoreSet.containsClass(callee.getOwner())) {
-                classQueue.add(callee.getOwner());
+                classDiscoveryQueue.add(callee.getOwner());
                 count += 1;
             }
         }
@@ -207,7 +250,7 @@ public class CallGraphBuilder extends EmptyVisitor {
             String thisName = cls.getName();
             if (!name.equals(thisName) && outerName != null && outerName.equals(thisName)) {
                 trace("Found inner class " + name);
-                classQueue.add(name);
+                classDiscoveryQueue.add(name);
             }
         }
         
