@@ -246,15 +246,6 @@ public class CallGraphBuilder extends EmptyVisitor {
         }
         
         @Override
-        public void visitInnerClass(String name, String outerName, String innerName, int access) {
-            String thisName = cls.getName();
-            if (!name.equals(thisName) && outerName != null && outerName.equals(thisName)) {
-                trace("Found inner class " + name);
-                classDiscoveryQueue.add(name);
-            }
-        }
-        
-        @Override
         public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
             MethodPath path = new MethodPath(cls.getName(), name, desc);
             if (ignoreSet.containsMethod(path)) {
