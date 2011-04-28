@@ -1,4 +1,4 @@
-package org.strictfptool;
+package org.strictfptool.loaders;
 
 import java.io.BufferedInputStream;
 import java.io.File;

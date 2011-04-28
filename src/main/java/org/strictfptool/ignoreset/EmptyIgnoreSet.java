@@ -1,6 +1,6 @@
 package org.strictfptool.ignoreset;
 
-import org.strictfptool.MethodPath;
+import org.strictfptool.misc.MethodPath;
 
 public class EmptyIgnoreSet implements IgnoreSet {
     

@@ -2,7 +2,7 @@ package org.strictfptool.ignoreset;
 
 import java.util.regex.Pattern;
 
-import org.strictfptool.MethodPath;
+import org.strictfptool.misc.MethodPath;
 
 public class WildcardIgnoreSet implements IgnoreSet {
     private Pattern pattern;

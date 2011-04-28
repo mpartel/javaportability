@@ -14,14 +14,14 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.MethodType;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.commons.EmptyVisitor;
-import org.strictfptool.ClassFileLoader;
-import org.strictfptool.MethodPath;
 import org.strictfptool.analysis.results.BasicCallGraphAnalysis;
 import org.strictfptool.callgraph.CallGraph.ClassNode;
 import org.strictfptool.callgraph.CallGraph.MethodNode;
 import org.strictfptool.ignoreset.EmptyIgnoreSet;
 import org.strictfptool.ignoreset.IgnoreSet;
+import org.strictfptool.loaders.ClassFileLoader;
 import org.strictfptool.misc.CheckedExceptionWrapper;
+import org.strictfptool.misc.MethodPath;
 
 public class CallGraphBuilder extends EmptyVisitor {
 

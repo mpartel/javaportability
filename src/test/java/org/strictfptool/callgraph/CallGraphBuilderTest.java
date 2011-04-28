@@ -9,14 +9,14 @@ import java.util.Set;
 
 import org.junit.Test;
 import org.objectweb.asm.MethodType;
-import org.strictfptool.DefaultClassFileLoader;
-import org.strictfptool.MethodPath;
 import org.strictfptool.analysis.results.BasicCallGraphAnalysis;
 import org.strictfptool.callgraph.CallGraph.CallSite;
 import org.strictfptool.callgraph.CallGraph.MethodNode;
 import org.strictfptool.ignoreset.EmptyIgnoreSet;
 import org.strictfptool.ignoreset.IgnoreSet;
 import org.strictfptool.ignoreset.SimpleIgnoreSet;
+import org.strictfptool.loaders.DefaultClassFileLoader;
+import org.strictfptool.misc.MethodPath;
 
 public class CallGraphBuilderTest {
     

@@ -2,9 +2,9 @@ package org.strictfptool.app;
 
 import java.util.List;
 
-import org.strictfptool.ClassFileLoader;
-import org.strictfptool.ClassPathClassFileLoader;
-import org.strictfptool.DefaultClassFileLoader;
+import org.strictfptool.loaders.ClassFileLoader;
+import org.strictfptool.loaders.ClassPathClassFileLoader;
+import org.strictfptool.loaders.DefaultClassFileLoader;
 
 public class Main {
     public static void main(String[] args) {

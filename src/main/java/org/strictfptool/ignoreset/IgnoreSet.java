@@ -1,6 +1,6 @@
 package org.strictfptool.ignoreset;
 
-import org.strictfptool.MethodPath;
+import org.strictfptool.misc.MethodPath;
 
 /**
  * A set of classes and/or methods to ignore.

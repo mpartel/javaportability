@@ -3,7 +3,7 @@ package org.strictfptool.ignoreset;
 import java.util.HashSet;
 
 import org.objectweb.asm.Type;
-import org.strictfptool.MethodPath;
+import org.strictfptool.misc.MethodPath;
 
 public class SimpleIgnoreSet implements IgnoreSet {
     

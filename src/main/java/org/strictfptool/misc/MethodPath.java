@@ -1,4 +1,4 @@
-package org.strictfptool;
+package org.strictfptool.misc;
 
 import org.objectweb.asm.Type;
 
