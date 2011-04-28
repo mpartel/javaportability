@@ -1,5 +1,4 @@
-# strictfp-tool #
-TODO: RENAME TO lockstep-verifier
+# lockstepcheck #
 
 Analyzes a body of Java bytecode for portability and determinism. An intended use-case is a game that uses a lock-step synchronization strategy and thus requires core game logic to behave exactly the same on all peers.
 
