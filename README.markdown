@@ -16,6 +16,7 @@ The tool is finds all _unsafe_ methods transitively called from a set of root cl
 ## TODO ##
 
 * Ignore lists ("don't care that this method is called").
+* An ignore annotation.
 * Native methods, unless whitelisted.
 * Blacklists ("ensure that this method is not called").
 * A standard blacklist covering some of the Java standard library.
