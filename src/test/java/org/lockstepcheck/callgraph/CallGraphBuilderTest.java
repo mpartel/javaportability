@@ -270,6 +270,10 @@ public class CallGraphBuilderTest {
         public double nonsfp(double x) {
             return 1.0 / x;
         }
+        
+        public double safe(double x) {
+            return x;
+        }
     }
     
     public static strictfp class FullySfp {
@@ -289,14 +293,17 @@ public class CallGraphBuilderTest {
         
         MethodNode sfp = cg.getClass(PartlySfp.class).getMethod("sfp", mt("(D)D"));
         MethodNode nonsfp = cg.getClass(PartlySfp.class).getMethod("nonsfp", mt("(D)D"));
+        MethodNode safe = cg.getClass(PartlySfp.class).getMethod("safe", mt("(D)D"));
         MethodNode foo = cg.getClass(FullySfp.class).getMethod("foo", mt("(D)D"));
         
         assertTrue(result.localFpMathMethods().contains(sfp));
         assertTrue(result.localFpMathMethods().contains(nonsfp));
+        assertFalse(result.localFpMathMethods().contains(safe));
         assertTrue(result.localFpMathMethods().contains(foo));
         
         assertTrue(result.strictfpMethods().contains(sfp));
         assertFalse(result.strictfpMethods().contains(nonsfp));
+        assertFalse(result.strictfpMethods().contains(safe));
         assertTrue(result.strictfpMethods().contains(foo));
     }
     
