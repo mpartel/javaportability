@@ -20,3 +20,9 @@ The tool is finds all _unsafe_ methods transitively called from a set of root cl
 * Native methods, unless whitelisted.
 * Blacklists ("ensure that this method is not called").
 * A standard blacklist covering some of the Java standard library.
+
+## Links ##
+
+* http://en.wikipedia.org/wiki/Strictfp
+* http://stackoverflow.com/questions/517915/when-to-use-strictfp-keyword-in-java
+* http://java.sun.com/docs/books/jls/strictfp-changes.pdf
