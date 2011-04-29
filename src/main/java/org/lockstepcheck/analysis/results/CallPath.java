@@ -43,11 +43,6 @@ public class CallPath implements Iterable<MethodNode> {
     }
     
     @Override
-    public String toString() {
-        return this.toString("\n");
-    }
-    
-    @Override
     public int hashCode() {
         return method.hashCode() << (next == null ? 1 : 2);
     }
@@ -64,18 +59,6 @@ public class CallPath implements Iterable<MethodNode> {
         } else {
             return false;
         }
-    }
-    
-    public String toString(String separator) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.method.toString());
-        CallPath p = this.next;
-        while (p != null) {
-            sb.append(separator);
-            sb.append(p.method.toString());
-            p = p.next;
-        }
-        return sb.toString();
     }
     
     private static class CallPathIterator implements Iterator<MethodNode> {

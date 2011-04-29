@@ -24,7 +24,9 @@ public class ArgParser {
             "  -p, --path class:path:components    Class path to search classes from.\n" +
             "                                      Omit to use the JVM's classpath.\n" +
             "  -h, --help                          This help message.\n" +
-            "      --debug                         Print detailed debug messages.";
+            "  -v, --verbose                       Print a little more.\n" +
+            "      --debug                         Print detailed debug messages.\n" +
+            "\n";
     }
     
     private static class Impl {
@@ -49,6 +51,8 @@ public class ArgParser {
                 String arg = remainingArgs.removeFirst();
                 if (isOneOf(arg, "--debug")) {
                     settings.trace = true;
+                } else if (isOneOf(arg, "-v", "--verbose")) {
+                    settings.verbose = true;
                 } else if (isOneOf(arg, "-p", "--path")) {
                     processPathArg();
                 } else {

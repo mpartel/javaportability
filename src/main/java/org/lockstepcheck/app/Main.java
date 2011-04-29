@@ -1,6 +1,11 @@
 package org.lockstepcheck.app;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.lockstepcheck.analysis.StrictfpSafetyAnalyzer;
 import org.lockstepcheck.analysis.results.BasicCallGraphAnalysis;
+import org.lockstepcheck.analysis.results.StrictfpSafetyAnalysis;
 import org.lockstepcheck.callgraph.CallGraphBuilder;
 import org.lockstepcheck.callgraph.Root;
 import org.lockstepcheck.ignoreset.EmptyIgnoreSet;
@@ -11,11 +16,9 @@ import org.lockstepcheck.loaders.DefaultClassFileLoader;
 public class Main {
     public static void main(String[] args) throws Exception {
         Settings settings = readArgs(args);
-        ClassFileLoader classFileLoader = makeClassFileLoader(settings);
-        BasicCallGraphAnalysis basicResult = buildCallgraph(settings, classFileLoader);
-        System.out.println("TODO...");
+        new Main(settings).run();
     }
-
+    
     private static Settings readArgs(String[] args) {
         ArgParser argParser = new ArgParser();
         Settings settings = null;
@@ -34,7 +37,42 @@ public class Main {
         return settings;
     }
     
-    private static ClassFileLoader makeClassFileLoader(Settings settings) {
+    
+    private Settings settings;
+    private Appendable output;
+    
+    private List<Root> roots;
+    private ClassFileLoader classFileLoader;
+    
+    private Main(Settings settings) {
+        this.settings = settings;
+        this.output = System.out;
+    }
+    
+    private void run() throws Exception {
+        roots = parseRoots();
+        classFileLoader = makeClassFileLoader();
+        BasicCallGraphAnalysis basicResult = buildCallgraph(classFileLoader);
+        StrictfpSafetyAnalysis sfpResult = doStrictfpSafetyAnalysis(classFileLoader, basicResult);
+        new Reporter(settings).writeReport(output, roots, sfpResult);
+    }
+    
+    private List<Root> parseRoots() {
+        List<Root> roots = new ArrayList<Root>();
+        for (String target : settings.targets) {
+            Root root;
+            if (target.contains("::")) {
+                String[] parts = target.split("::");
+                root = new Root(parts[0], parts[1]);
+            } else {
+                root = new Root(target.replace('.', '/'));
+            }
+            roots.add(root);
+        }
+        return roots;
+    }
+
+    private ClassFileLoader makeClassFileLoader() {
         if (settings.searchPath != null) {
             return new ClassPathClassFileLoader(settings.searchPath);
         } else {
@@ -42,18 +80,26 @@ public class Main {
         }
     }
     
-    private static BasicCallGraphAnalysis buildCallgraph(Settings settings, ClassFileLoader classFileLoader) throws Exception {
+    private BasicCallGraphAnalysis buildCallgraph(ClassFileLoader classFileLoader) throws Exception {
         CallGraphBuilder builder = new CallGraphBuilder(classFileLoader, EmptyIgnoreSet.getInstance());
         builder.setDebugTrace(settings.trace);
-        
-        for (String target : settings.targets) {
-            if (target.contains("::")) {
-                String[] parts = target.split("::");
-                builder.addRoot(new Root(parts[0], parts[1]));
-            } else {
-                builder.addRoot(new Root(target.replace('.', '/')));
-            }
+        if (settings.verbose) {
+            System.out.println("Building call graph...");
+        }
+        for (Root root : roots) {
+            builder.addRoot(root);
         }
         return builder.getResult();
+    }
+    
+    private StrictfpSafetyAnalysis doStrictfpSafetyAnalysis(ClassFileLoader classFileLoader, BasicCallGraphAnalysis basicResult) throws Exception {
+        StrictfpSafetyAnalyzer analyzer = new StrictfpSafetyAnalyzer(basicResult);
+        if (settings.verbose) {
+            System.out.println("Analyzing strictfp safety...");
+        }
+        for (Root root : roots) {
+            analyzer.addRoot(root);
+        }
+        return analyzer.getResult();
     }
 }
