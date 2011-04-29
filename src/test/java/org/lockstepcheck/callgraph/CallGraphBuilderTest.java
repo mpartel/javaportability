@@ -4,9 +4,12 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
+import java.util.List;
+
 import org.junit.Test;
 import org.lockstepcheck.analysis.results.BasicCallGraphAnalysis;
 import org.lockstepcheck.callgraph.CallGraph.CallSite;
+import org.lockstepcheck.callgraph.CallGraph.ClassNode;
 import org.lockstepcheck.callgraph.CallGraph.MethodNode;
 import org.lockstepcheck.ignoreset.EmptyIgnoreSet;
 import org.lockstepcheck.ignoreset.IgnoreSet;
@@ -14,6 +17,9 @@ import org.lockstepcheck.ignoreset.SimpleIgnoreSet;
 import org.lockstepcheck.loaders.ClassFileLoader;
 import org.lockstepcheck.loaders.DefaultClassFileLoader;
 import org.lockstepcheck.misc.MethodPath;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.MethodType;
 
 public class CallGraphBuilderTest {
@@ -374,12 +380,114 @@ public class CallGraphBuilderTest {
     }
     
     
-    // TODO: interfaces and abstract classes!
+    public interface FooInterface {
+        public void foo();
+    }
+    
+    public interface FoobarInterface extends FooInterface {
+        public void bar();
+    }
+    
+    public class FooInterfaceCaller {
+        public void callFoo(FooInterface x) {
+            x.foo();
+        }
+    }
+    
+    public abstract class FooAbstract implements FoobarInterface {
+        public abstract void baz();
+        public void callAll() {
+            foo();
+            bar();
+            baz();
+        }
+    }
+    
+    @Test
+    public void testDiscoveryOfSuperinterfaces() {
+        CallGraph cg = buildCg(FooAbstract.class);
+        
+        assertTrue(cg.hasClass(FooInterface.class));
+        assertTrue(cg.hasClass(FoobarInterface.class));
+        
+        List<ClassNode> hierarchy = cg.getClass(FooAbstract.class).getHierarchy();
+        assertTrue(hierarchy.contains(cg.getClass(FooAbstract.class)));
+        assertTrue(hierarchy.contains(cg.getClass(FoobarInterface.class)));
+        assertTrue(hierarchy.contains(cg.getClass(FooInterface.class)));
+    }
+    
+    @Test
+    public void testMethodsInheritedFromInterface() {
+        CallGraph cg = buildCg(FooAbstract.class);
+        ClassNode cls = cg.getClass(FooAbstract.class);
+        assertTrue(cls.hasMethod("foo", mt("()V")));
+        assertTrue(cls.hasMethod("bar", mt("()V")));
+    }
+    
+    @Test
+    public void testCallsToInterfaceMethods() {
+        String methodDesc = "(L" + FooInterface.class.getName().replace('.', '/') + ";)V";
+        CallGraph cg = buildCg(new MethodPath(FooInterfaceCaller.class, "callFoo", methodDesc));
+        
+        MethodNode callFoo = cg.getClass(FooInterfaceCaller.class).getMethod("callFoo", mt(methodDesc));
+        MethodNode foo = cg.getClass(FooInterface.class).getMethod("foo", mt("()V"));
+        
+        assertCall(callFoo, foo);
+        assertNoCall(foo, callFoo);
+    }
+    
+    @Test
+    public void testCallsToAbstractMethods() {
+        CallGraph cg = buildCg(new MethodPath(FooAbstract.class, "callAll", "()V"));
+        
+        MethodNode callAll = cg.getClass(FooAbstract.class).getMethod("callAll", mt("()V"));
+        MethodNode foo = cg.getClass(FooAbstract.class).getMethod("foo", mt("()V"));
+        MethodNode bar = cg.getClass(FooAbstract.class).getMethod("bar", mt("()V"));
+        MethodNode baz = cg.getClass(FooAbstract.class).getMethod("baz", mt("()V"));
+        
+        assertCall(callAll, foo);
+        assertCall(callAll, bar);
+        assertCall(callAll, baz);
+    }
+    
+    
+    public class ArrayCaller {
+        public void callMethodsOnArrays() {
+            new String[0].toString();
+            new String[0].clone(); // (clone is overloaded in array classes)
+            new int[0][0].clone();
+        }
+    }
+    
+    @Test
+    public void testNoAttemptToLoadArrayClasses() throws Exception {
+        ClassFileLoader loader = mock(DefaultClassFileLoader.class);
+        when(loader.loadClass(any(String.class))).thenAnswer(new Answer<ClassReader>() {
+            @Override
+            public ClassReader answer(InvocationOnMock invocation) throws Throwable {
+                String arg = ((String)invocation.getArguments()[0]);
+                if (arg.startsWith("[")) {
+                    fail("Attempted to load array class " + arg);
+                }
+                return (ClassReader)invocation.callRealMethod();
+            }
+        });
+        
+        CallGraphBuilder builder = new CallGraphBuilder(loader, EmptyIgnoreSet.getInstance());
+        
+        builder.addRootClass(ArrayCaller.class);
+        builder.getResult();
+    }
+    
     
     
     
     private CallGraph buildCg(MethodPath... methods) {
         return build(methods).callGraph();
+    }
+    
+    private CallGraph buildCg(Class<?>... classes) {
+        return build(classes).callGraph();
     }
     
     private CallGraph buildCg(IgnoreSet ignores, MethodPath... methods) {

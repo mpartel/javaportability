@@ -19,6 +19,7 @@ import org.lockstepcheck.misc.MethodPath;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.MethodType;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.EmptyVisitor;
 
 public class CallGraphBuilder extends EmptyVisitor {
@@ -167,7 +168,15 @@ public class CallGraphBuilder extends EmptyVisitor {
     }
     
     private boolean classNotYetDiscovered(String className) {
-        return !callGraph.hasClass(className) && !ignoreSet.containsClass(className);
+        return !callGraph.hasClass(className) && !shouldIgnoreClass(className);
+    }
+    
+    private boolean shouldIgnoreClass(String className) {
+        return className.startsWith("[") || ignoreSet.containsClass(className);
+    }
+    
+    private boolean shouldIgnoreMethod(MethodPath path) {
+        return shouldIgnoreClass(path.getOwner()) || ignoreSet.containsMethod(path);
     }
     
     private void enqueueMethodsInRoot(Root root) {
@@ -182,7 +191,7 @@ public class CallGraphBuilder extends EmptyVisitor {
     }
     
     private ClassNode discoverClass(String internalName) throws ClassNotFoundException, IOException {
-        if (!isBasicArrayClass(internalName) && !ignoreSet.containsClass(internalName)) {
+        if (!isBasicArrayClass(internalName) && !shouldIgnoreClass(internalName)) {
             trace("Discovering class " + internalName);
             
             ClassReader reader = classFileLoader.loadClass(internalName);
@@ -224,7 +233,8 @@ public class CallGraphBuilder extends EmptyVisitor {
     }
     
     private MethodNode getMethodNode(MethodPath methodPath) {
-        return callGraph.getClass(methodPath.getOwner()).getMethod(methodPath.getName(), new MethodType(methodPath.getDesc()));
+        ClassNode cls = callGraph.getClass(methodPath.getOwner());
+        return cls.getMethod(methodPath.getName(), new MethodType(methodPath.getDesc()));
     }
 
     private int enqueueUndiscoveredCalleeClasses(MethodNode methodNode) {
@@ -250,7 +260,7 @@ public class CallGraphBuilder extends EmptyVisitor {
         List<MethodPath> calls = unanalyzedCalls.remove(methodNode);
         
         for (MethodPath callee : calls) {
-            if (ignoreSet.containsMethod(callee)) {
+            if (shouldIgnoreMethod(callee)) {
                 continue;
             }
             
@@ -279,18 +289,23 @@ public class CallGraphBuilder extends EmptyVisitor {
 
         @Override
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-            ClassNode superNode = getSuperclassNode(superName);
-            cls = callGraph.addClass(name, superNode);
+            if ((version & Opcodes.ACC_INTERFACE) == 0) { // Interfaces have Object as their superclass. We don't need that info in our callgraph.
+                ClassNode superNode = getDependency(superName);
+                cls = callGraph.addClass(name, superNode);
+            }
+            for (String interfaceName : interfaces) {
+                cls.addInterface(getDependency(interfaceName));
+            }
         }
-        
-        private ClassNode getSuperclassNode(String superName) {
-            ClassNode superNode = null;
+
+        private ClassNode getDependency(String superName) {
+            ClassNode depNode = null;
             if (superName != null) {
                 if (callGraph.hasClass(superName)) {
-                    superNode = callGraph.getClass(superName);
+                    depNode = callGraph.getClass(superName);
                 } else {
                     try {
-                        superNode = discoverClass(superName);
+                        depNode = discoverClass(superName);
                     } catch (ClassNotFoundException e) {
                         throw new CheckedExceptionWrapper(e);
                     } catch (IOException e) {
@@ -298,13 +313,13 @@ public class CallGraphBuilder extends EmptyVisitor {
                     }
                 }
             }
-            return superNode;
+            return depNode;
         }
         
         @Override
         public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
             MethodPath path = new MethodPath(cls.getName(), name, desc);
-            if (ignoreSet.containsMethod(path)) {
+            if (shouldIgnoreMethod(path)) {
                 trace("Ignored method " + path);
                 return new EmptyVisitor();
             }
