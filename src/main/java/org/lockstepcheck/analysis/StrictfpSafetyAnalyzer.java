@@ -4,7 +4,9 @@ import org.lockstepcheck.analysis.results.BasicCallGraphAnalysis;
 import org.lockstepcheck.analysis.results.CallPath;
 import org.lockstepcheck.analysis.results.StrictfpSafetyAnalysis;
 import org.lockstepcheck.callgraph.CallGraph.CallSite;
+import org.lockstepcheck.callgraph.CallGraph.ClassNode;
 import org.lockstepcheck.callgraph.CallGraph.MethodNode;
+import org.lockstepcheck.callgraph.Root;
 
 public class StrictfpSafetyAnalyzer {
     private StrictfpSafetyAnalysis result;
@@ -17,7 +19,16 @@ public class StrictfpSafetyAnalyzer {
         return result;
     }
     
-    public void analyzeMethod(MethodNode method) {
+    public void addRoot(Root root) {
+        ClassNode cls = result.callGraph().getClass(root.getClassName());
+        for (MethodNode m : cls.getMethodsIncludingInherited()) {
+            if (root.matchesMethod(m)) {
+                analyzeMethod(m);
+            }
+        }
+    }
+    
+    private void analyzeMethod(MethodNode method) {
         if (!isAnalyzed(method)) {
             markAnalyzed(method);
             if (!isLocallySafe(method)) {

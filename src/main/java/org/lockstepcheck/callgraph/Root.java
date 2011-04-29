@@ -2,6 +2,7 @@ package org.lockstepcheck.callgraph;
 
 import java.util.regex.Pattern;
 
+import org.lockstepcheck.callgraph.CallGraph.MethodNode;
 import org.lockstepcheck.misc.MethodPath;
 
 public class Root {
@@ -50,5 +51,10 @@ public class Root {
     
     public Pattern getMethodDescPattern() {
         return methodDescPattern;
+    }
+
+    public boolean matchesMethod(MethodNode m) {
+        return methodPattern.matcher(m.getName()).matches() &&
+               methodDescPattern.matcher(m.getDesc()).matches();
     }
 }

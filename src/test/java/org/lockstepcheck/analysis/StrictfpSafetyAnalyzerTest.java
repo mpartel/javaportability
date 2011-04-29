@@ -10,6 +10,7 @@ import org.lockstepcheck.analysis.results.StrictfpSafetyAnalysis;
 import org.lockstepcheck.callgraph.CallGraph;
 import org.lockstepcheck.callgraph.CallGraph.ClassNode;
 import org.lockstepcheck.callgraph.CallGraph.MethodNode;
+import org.lockstepcheck.callgraph.Root;
 import org.objectweb.asm.MethodType;
 
 public class StrictfpSafetyAnalyzerTest {
@@ -39,7 +40,7 @@ public class StrictfpSafetyAnalyzerTest {
         basic.localFpMathMethods().add(m2);
         basic.strictfpMethods().add(m2);
         
-        analyzer.analyzeMethod(m1);
+        analyzer.addRoot(new Root(m1.getPath()));
         StrictfpSafetyAnalysis result = analyzer.getResult();
         
         assertTrue(result.unsafeCallPaths().isEmpty());
@@ -52,7 +53,7 @@ public class StrictfpSafetyAnalyzerTest {
         
         basic.localFpMathMethods().add(m1);
         
-        analyzer.analyzeMethod(m1);
+        analyzer.addRoot(new Root(m1.getPath()));
         StrictfpSafetyAnalysis result = analyzer.getResult();
         
         assertEquals(CallPath.make(m1), result.unsafeCallPaths().get(m1));
@@ -75,7 +76,7 @@ public class StrictfpSafetyAnalyzerTest {
         basic.strictfpMethods().add(m2);
         basic.localFpMathMethods().add(unsafe);
         
-        analyzer.analyzeMethod(m1);
+        analyzer.addRoot(new Root(m1.getPath()));
         StrictfpSafetyAnalysis result = analyzer.getResult();
         
         assertEquals(CallPath.make(m1, m2, m3, unsafe), result.unsafeCallPaths().get(m1));
