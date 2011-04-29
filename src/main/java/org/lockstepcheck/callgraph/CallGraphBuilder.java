@@ -33,51 +33,6 @@ public class CallGraphBuilder extends EmptyVisitor {
     private Queue<MethodPath> methodQueue;
     private HashMap<MethodNode, List<MethodPath>> unanalyzedCalls;
     
-    private static class Root {
-        private static final Pattern ACCEPT_ALL = Pattern.compile(".*");
-        private final String className;
-        private final Pattern methodPattern;
-        private final Pattern methodDescPattern;
-        
-        public Root(String className) {
-            this(className, ACCEPT_ALL);
-        }
-        
-        public Root(String className, String methodName) {
-            this(className, exactMatcher(methodName));
-        }
-
-        public Root(MethodPath methodPath) {
-            this(methodPath.getOwner(), exactMatcher(methodPath.getName()), exactMatcher(methodPath.getDesc()));
-        }
-        
-        public Root(String className, Pattern methodPattern) {
-            this(className, methodPattern, ACCEPT_ALL);
-        }
-        
-        public Root(String className, Pattern methodPattern, Pattern methodDescPattern) {
-            this.className = className;
-            this.methodPattern = methodPattern;
-            this.methodDescPattern = methodDescPattern;
-        }
-        
-        private static Pattern exactMatcher(String methodName) {
-            return Pattern.compile(Pattern.quote(methodName));
-        }
-        
-        public String getClassName() {
-            return className;
-        }
-        
-        public Pattern getMethodPattern() {
-            return methodPattern;
-        }
-        
-        public Pattern getMethodDescPattern() {
-            return methodDescPattern;
-        }
-    }
-    
     public CallGraphBuilder(ClassFileLoader classFileLoader, IgnoreSet ignoreSet) {
         this.callGraph = new CallGraph();
         this.result = new BasicCallGraphAnalysis(callGraph);
@@ -92,27 +47,7 @@ public class CallGraphBuilder extends EmptyVisitor {
         traceEnabled = enabled;
     }
     
-    public void addRootClass(String className) throws Exception {
-        addRoot(new Root(className));
-    }
-    
-    public void addRootClass(Class<?> cls) throws Exception {
-        addRootClass(cls.getName().replace('.', '/'));
-    }
-    
-    public void addRootMethod(MethodPath methodPath) throws Exception {
-        addRoot(new Root(methodPath));
-    }
-    
-    public void addRootMethod(String className, String methodName) throws Exception {
-        addRoot(new Root(className, methodName));
-    }
-    
-    public void addRootMethods(String className, Pattern methodPattern) throws Exception {
-        addRoot(new Root(className, methodPattern));
-    }
-    
-    private void addRoot(Root root) throws Exception {
+    public void addRoot(Root root) throws Exception {
         String className = root.getClassName();
         try {
             if (!ignoreSet.containsClass(className)) {

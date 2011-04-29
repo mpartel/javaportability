@@ -2,6 +2,7 @@ package org.lockstepcheck.app;
 
 import org.lockstepcheck.analysis.results.BasicCallGraphAnalysis;
 import org.lockstepcheck.callgraph.CallGraphBuilder;
+import org.lockstepcheck.callgraph.Root;
 import org.lockstepcheck.ignoreset.EmptyIgnoreSet;
 import org.lockstepcheck.loaders.ClassFileLoader;
 import org.lockstepcheck.loaders.ClassPathClassFileLoader;
@@ -48,9 +49,9 @@ public class Main {
         for (String target : settings.targets) {
             if (target.contains("::")) {
                 String[] parts = target.split("::");
-                builder.addRootMethod(parts[0], parts[1]);
+                builder.addRoot(new Root(parts[0], parts[1]));
             } else {
-                builder.addRootClass(target.replace('.', '/'));
+                builder.addRoot(new Root(target.replace('.', '/')));
             }
         }
         return builder.getResult();

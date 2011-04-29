@@ -62,7 +62,7 @@ public class CallGraphBuilderTest {
         when(loader.loadClass(any(String.class))).thenThrow(new ClassNotFoundException());
         
         CallGraphBuilder builder = new CallGraphBuilder(loader, EmptyIgnoreSet.getInstance());
-        builder.addRootClass("Nonexistent");
+        builder.addRoot(new Root("Nonexistent"));
         builder.getResult();
     }
     
@@ -74,7 +74,7 @@ public class CallGraphBuilderTest {
         ignores.addClass(Simple.class);
         
         CallGraphBuilder builder = new CallGraphBuilder(loader, ignores);
-        builder.addRootClass(Simple.class);
+        builder.addRoot(new Root(Simple.class));
         
         assertFalse(builder.getResult().callGraph().hasClass(Simple.class));
     }
@@ -475,7 +475,7 @@ public class CallGraphBuilderTest {
         
         CallGraphBuilder builder = new CallGraphBuilder(loader, EmptyIgnoreSet.getInstance());
         
-        builder.addRootClass(ArrayCaller.class);
+        builder.addRoot(new Root(ArrayCaller.class));
         builder.getResult();
     }
     
@@ -506,7 +506,7 @@ public class CallGraphBuilderTest {
         try {
             CallGraphBuilder builder = new CallGraphBuilder(new DefaultClassFileLoader(), ignores);
             for (MethodPath method : methods) {
-                builder.addRootMethod(method);
+                builder.addRoot(new Root(method));
             }
             return builder.getResult();
         } catch (RuntimeException e) {
@@ -520,7 +520,7 @@ public class CallGraphBuilderTest {
         try {
             CallGraphBuilder builder = new CallGraphBuilder(new DefaultClassFileLoader(), ignores);
             for (Class<?> cls : classes) {
-                builder.addRootClass(cls.getName().replace('.', '/'));
+                builder.addRoot(new Root(cls));
             }
             return builder.getResult();
         } catch (RuntimeException e) {
