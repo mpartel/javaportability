@@ -8,6 +8,11 @@ The tool is finds all _unsafe_ methods transitively called from a set of root cl
 * it's marked `native` and is not whitelisted [TODO].
 * it's blacklisted [TODO].
 
+## Caveats ##
+
+* Polymorphism: Currently if code calls a method on an interface or a superclass and a subclass overrides that method with unsafe code, the tool will not issue a warning. In general the tool might not even know about the subclass.
+* Reflection: There's no way to see whether unsafe code is called through reflection.
+
 ## TODO ##
 
 * Ignore lists ("don't care that this method is called").
