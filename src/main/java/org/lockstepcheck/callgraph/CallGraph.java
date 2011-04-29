@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.lockstepcheck.misc.MethodPath;
@@ -15,12 +16,14 @@ public class CallGraph {
     public class ClassNode {
         private String name;          // The "internal name" of the class
         private ClassNode superclass; // Possibly null
+        private List<ClassNode> interfaces;
         private List<MethodNode> methods;
         
         private ClassNode(String name, ClassNode superclass) {
             this.name = name;
             this.superclass = superclass;
-            this.methods = new ArrayList<CallGraph.MethodNode>();
+            this.interfaces = new LinkedList<ClassNode>();
+            this.methods = new ArrayList<MethodNode>();
         }
         
         public String getName() {
@@ -29,6 +32,27 @@ public class CallGraph {
         
         public ClassNode getSuperclass() {
             return superclass;
+        }
+        
+        public void addInterface(ClassNode interfaceNode) {
+            this.interfaces.add(interfaceNode);
+        }
+        
+        public List<ClassNode> getLocalInterfaces() {
+            return Collections.unmodifiableList(interfaces);
+        }
+        
+        public List<ClassNode> getHierarchy() {
+            List<ClassNode> result = new LinkedList<ClassNode>();
+            ClassNode cls = this;
+            while (cls != null) {
+                result.add(cls);
+                for (ClassNode iface : cls.getLocalInterfaces()) {
+                    result.addAll(iface.getHierarchy());
+                }
+                cls = cls.superclass;
+            }
+            return result;
         }
         
         public MethodNode addMethod(String name, MethodType type) {
@@ -41,12 +65,13 @@ public class CallGraph {
         }
         
         public MethodNode tryGetMethod(String name, MethodType type) {
-            MethodNode m = tryGetLocalMethod(name, type);
-            if (m == null && superclass != null) {
-                return superclass.tryGetMethod(name, type);
-            } else {
-                return m;
+            for (ClassNode cls : getHierarchy()) {
+                MethodNode m = cls.tryGetLocalMethod(name, type);
+                if (m != null) {
+                    return m;
+                }
             }
+            return null;
         }
         
         public MethodNode getMethod(String name, MethodType type) {
@@ -88,10 +113,8 @@ public class CallGraph {
         
         public List<MethodNode> getMethodsIncludingInherited() {
             List<MethodNode> result = new ArrayList<MethodNode>();
-            ClassNode cls = this;
-            while (cls != null) {
+            for (ClassNode cls : getHierarchy()) {
                 result.addAll(cls.methods);
-                cls = cls.superclass;
             }
             return result;
         }
@@ -178,6 +201,10 @@ public class CallGraph {
     
     public CallGraph() {
         this.classes = new HashMap<String, CallGraph.ClassNode>();
+    }
+    
+    public ClassNode addClass(String internalName) {
+        return addClass(internalName, null);
     }
     
     public ClassNode addClass(String internalName, ClassNode superclass) {

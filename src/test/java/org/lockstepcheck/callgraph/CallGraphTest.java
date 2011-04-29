@@ -13,8 +13,8 @@ public class CallGraphTest {
     @Test
     public void testFindingCallersAndCallees() {
         CallGraph cg = new CallGraph();
-        ClassNode a = cg.addClass("A", null);
-        ClassNode b = cg.addClass("B", null);
+        ClassNode a = cg.addClass("A");
+        ClassNode b = cg.addClass("B");
         MethodNode foo = a.addMethod("foo", new MethodType("()V"));
         MethodNode bar = b.addMethod("bar", new MethodType("()V"));
         cg.addCall(foo, bar);
@@ -33,14 +33,14 @@ public class CallGraphTest {
     @Test(expected = IllegalArgumentException.class)
     public void testAddingClassTwice() {
         CallGraph cg = new CallGraph();
-        cg.addClass("A", null);
-        cg.addClass("A", null);
+        cg.addClass("A");
+        cg.addClass("A");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testAddingMethodTwice() {
         CallGraph cg = new CallGraph();
-        ClassNode a = cg.addClass("A", null);
+        ClassNode a = cg.addClass("A");
         a.addMethod("foo", new MethodType("()V"));
         a.addMethod("foo", new MethodType("()V"));
     }
@@ -48,16 +48,32 @@ public class CallGraphTest {
     @Test
     public void testAddingOverloadedMethod() {
         CallGraph cg = new CallGraph();
-        ClassNode a = cg.addClass("A", null);
+        ClassNode a = cg.addClass("A");
         a.addMethod("foo", new MethodType("()V"));
         a.addMethod("foo", new MethodType("()I"));
         assertEquals(2, a.getLocalMethods().size());
     }
     
     @Test
+    public void testRetrievingSuperclassesAndInterfacesHierarchy() {
+        CallGraph cg = new CallGraph();
+        
+        ClassNode ai = cg.addClass("AI");
+        ClassNode bi = cg.addClass("BI", ai);
+        
+        ClassNode c = cg.addClass("C", null);
+        c.addInterface(bi);
+        
+        ClassNode d = cg.addClass("D", c);
+        
+        assertArrayEquals(new ClassNode[] {bi}, c.getLocalInterfaces().toArray());
+        assertArrayEquals(new ClassNode[] {d, c, bi, ai}, d.getHierarchy().toArray());
+    }
+    
+    @Test
     public void testFindingMethodsDefinedInSuperclass() {
         CallGraph cg = new CallGraph();
-        ClassNode a = cg.addClass("A", null);
+        ClassNode a = cg.addClass("A");
         ClassNode b = cg.addClass("B", a);
         MethodNode m = a.addMethod("foo", new MethodType("()V"));
         
@@ -68,9 +84,25 @@ public class CallGraphTest {
     }
     
     @Test
+    public void testFindingMethodsDefinedInInterfaces() {
+        CallGraph cg = new CallGraph();
+        ClassNode ai = cg.addClass("AI");
+        ClassNode bi = cg.addClass("BI");
+        MethodNode foo = ai.addMethod("foo", new MethodType("()V"));
+        MethodNode bar = bi.addMethod("bar", new MethodType("()V"));
+        
+        ClassNode c = cg.addClass("C");
+        c.addInterface(ai);
+        c.addInterface(bi);
+        
+        assertSame(foo, c.getMethod("foo", new MethodType("()V")));
+        assertSame(bar, c.getMethod("bar", new MethodType("()V")));
+    }
+    
+    @Test
     public void testOverridingMethods() {
         CallGraph cg = new CallGraph();
-        ClassNode a = cg.addClass("A", null);
+        ClassNode a = cg.addClass("A");
         ClassNode b = cg.addClass("B", a);
         MethodNode m1 = a.addMethod("foo", new MethodType("()V"));
         MethodNode m2 = b.addMethod("foo", new MethodType("()V"));
