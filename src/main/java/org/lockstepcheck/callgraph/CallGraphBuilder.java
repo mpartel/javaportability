@@ -331,8 +331,6 @@ public class CallGraphBuilder extends EmptyVisitor {
              * 
              */
             
-            // 
-            
             switch (opcode) {
             case DADD:
             case FADD:
