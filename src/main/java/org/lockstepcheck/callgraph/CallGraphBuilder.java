@@ -304,13 +304,35 @@ public class CallGraphBuilder extends EmptyVisitor {
 
         @Override
         public void visitInsn(int opcode) {
-            if (!foundFpMath && isFloatArithmetic(opcode)) {
+            if (!foundFpMath && hasFloatResult(opcode)) {
                 result.localFpMathMethods().add(methodNode);
                 foundFpMath = true;
             }
         }
         
-        private boolean isFloatArithmetic(int opcode) {
+        private boolean hasFloatResult(int opcode) {
+            
+            /*
+             * Only operations that produce floating point results
+             * can be non-strictfp. Operations that take floats and produce
+             * something else are innocuous.
+             * 
+             * It's also safe to load and save floats as long as no arithmetic is
+             * performed on them. A float converted to the extended value set can always
+             * be converted back to its original value:
+             * 
+             *   "Note that the constraints in Table 4.1 are designed so that every element of the
+             *    ﬂoat value set is necessarily also an element of the ﬂoat-extended-exponent value
+             *    set, the double value set, and the double-extended-exponent value set. Likewise,
+             *    each element of the double value set is necessarily also an element of the doubleextended-exponent value set. Each extended-exponent value set has a larger range
+             *    of exponent values than the corresponding standard value set, but does not have
+             *    more precision"
+             *   -- [http://java.sun.com/docs/books/jls/strictfp-changes.pdf]
+             * 
+             */
+            
+            // 
+            
             switch (opcode) {
             case DADD:
             case FADD:
@@ -328,16 +350,8 @@ public class CallGraphBuilder extends EmptyVisitor {
             case I2F:
             case L2D:
             case L2F:
-            case F2I:
-            case F2L:
             case F2D:
-            case D2I:
-            case D2L:
             case D2F:
-            case FCMPL:
-            case FCMPG:
-            case DCMPL:
-            case DCMPG:
                 return true;
             default:
                 return false;
