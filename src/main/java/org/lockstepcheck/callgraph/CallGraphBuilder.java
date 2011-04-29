@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 import org.lockstepcheck.analysis.results.BasicCallGraphAnalysis;
 import org.lockstepcheck.callgraph.CallGraph.ClassNode;
 import org.lockstepcheck.callgraph.CallGraph.MethodNode;
+import org.lockstepcheck.ignoreset.EmptyIgnoreSet;
 import org.lockstepcheck.ignoreset.IgnoreSet;
 import org.lockstepcheck.loaders.ClassFileLoader;
 import org.lockstepcheck.misc.CheckedExceptionWrapper;
@@ -32,6 +33,10 @@ public class CallGraphBuilder extends EmptyVisitor {
     private Queue<String> classDiscoveryQueue;
     private Queue<MethodPath> methodQueue;
     private HashMap<MethodNode, List<MethodPath>> unanalyzedCalls;
+    
+    public CallGraphBuilder(ClassFileLoader classFileLoader) {
+        this(classFileLoader, new EmptyIgnoreSet());
+    }
     
     public CallGraphBuilder(ClassFileLoader classFileLoader, IgnoreSet ignoreSet) {
         this.callGraph = new CallGraph();

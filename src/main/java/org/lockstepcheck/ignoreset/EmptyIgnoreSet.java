@@ -4,13 +4,7 @@ import org.lockstepcheck.misc.MethodPath;
 
 public class EmptyIgnoreSet implements IgnoreSet {
     
-    private static final EmptyIgnoreSet instance = new EmptyIgnoreSet();
-    
-    private EmptyIgnoreSet() {
-    }
-    
-    public static EmptyIgnoreSet getInstance() {
-        return instance;
+    public EmptyIgnoreSet() {
     }
     
     @Override

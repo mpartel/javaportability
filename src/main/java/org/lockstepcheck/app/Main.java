@@ -81,7 +81,7 @@ public class Main {
     }
     
     private BasicCallGraphAnalysis buildCallgraph(ClassFileLoader classFileLoader) throws Exception {
-        CallGraphBuilder builder = new CallGraphBuilder(classFileLoader, EmptyIgnoreSet.getInstance());
+        CallGraphBuilder builder = new CallGraphBuilder(classFileLoader, new EmptyIgnoreSet());
         builder.setDebugTrace(settings.trace);
         if (settings.verbose) {
             System.out.println("Building call graph...");

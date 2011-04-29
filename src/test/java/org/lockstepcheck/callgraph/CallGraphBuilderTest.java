@@ -61,7 +61,7 @@ public class CallGraphBuilderTest {
         ClassFileLoader loader = mock(ClassFileLoader.class);
         when(loader.loadClass(any(String.class))).thenThrow(new ClassNotFoundException());
         
-        CallGraphBuilder builder = new CallGraphBuilder(loader, EmptyIgnoreSet.getInstance());
+        CallGraphBuilder builder = new CallGraphBuilder(loader);
         builder.addRoot(new Root("Nonexistent"));
         builder.getResult();
     }
@@ -480,7 +480,7 @@ public class CallGraphBuilderTest {
             }
         });
         
-        CallGraphBuilder builder = new CallGraphBuilder(loader, EmptyIgnoreSet.getInstance());
+        CallGraphBuilder builder = new CallGraphBuilder(loader);
         
         builder.addRoot(new Root(ArrayCaller.class));
         builder.getResult();
@@ -502,11 +502,11 @@ public class CallGraphBuilderTest {
     }
     
     private BasicCallGraphAnalysis build(MethodPath... methods) {
-        return build(EmptyIgnoreSet.getInstance(), methods);
+        return build(new EmptyIgnoreSet(), methods);
     }
     
     private BasicCallGraphAnalysis build(Class<?>... classes) {
-        return build(EmptyIgnoreSet.getInstance(), classes);
+        return build(new EmptyIgnoreSet(), classes);
     }
     
     private BasicCallGraphAnalysis build(IgnoreSet ignores, MethodPath... methods) {
