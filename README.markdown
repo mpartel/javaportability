@@ -30,6 +30,7 @@ The tool finds all _unsafe_ methods transitively called from a set of root class
   - add strictfp flags
   - Advanced: alter uses of unportable code
     - e.g. `Math` -> `StrictMath`, `new HashMap` -> `new LinkedHashMap`.
+  - A classloader that does these things.
 
 ## Links ##
 
