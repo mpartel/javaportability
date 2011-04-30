@@ -8,9 +8,9 @@ import java.util.List;
 import org.portablejava.analysis.results.CallPath;
 import org.portablejava.analysis.results.StrictfpSafetyAnalysis;
 import org.portablejava.callgraph.CallGraph;
-import org.portablejava.callgraph.Root;
 import org.portablejava.callgraph.CallGraph.ClassNode;
 import org.portablejava.callgraph.CallGraph.MethodNode;
+import org.portablejava.callgraph.Root;
 import org.portablejava.misc.Misc;
 
 public class Reporter {

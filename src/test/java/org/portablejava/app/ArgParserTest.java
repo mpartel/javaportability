@@ -5,9 +5,6 @@ import static org.junit.Assert.*;
 import java.util.List;
 
 import org.junit.Test;
-import org.portablejava.app.ArgParser;
-import org.portablejava.app.BadUsageException;
-import org.portablejava.app.Settings;
 
 public class ArgParserTest {
     

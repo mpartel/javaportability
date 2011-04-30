@@ -8,7 +8,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.objectweb.asm.ClassReader;
 import org.portablejava.TestUtils;
-import org.portablejava.loaders.ClassPathClassFileLoader;
 
 public class ClassPathClassFileLoaderTest {
     

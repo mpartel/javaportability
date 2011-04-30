@@ -3,7 +3,6 @@ package org.portablejava.callgraph.nodeset;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
-import org.portablejava.callgraph.nodeset.WildcardNodeSet;
 
 public class WildcardNodeSetTest {
     @Test

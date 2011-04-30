@@ -5,14 +5,13 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.objectweb.asm.MethodType;
-import org.portablejava.analysis.StrictfpSafetyAnalyzer;
 import org.portablejava.analysis.results.BasicCallGraphAnalysis;
 import org.portablejava.analysis.results.CallPath;
 import org.portablejava.analysis.results.StrictfpSafetyAnalysis;
 import org.portablejava.callgraph.CallGraph;
-import org.portablejava.callgraph.Root;
 import org.portablejava.callgraph.CallGraph.ClassNode;
 import org.portablejava.callgraph.CallGraph.MethodNode;
+import org.portablejava.callgraph.Root;
 import org.portablejava.loaders.DefaultClassFileLoader;
 
 public class StrictfpSafetyAnalyzerTest {

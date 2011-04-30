@@ -4,7 +4,6 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 import org.objectweb.asm.MethodType;
-import org.portablejava.callgraph.CallGraph;
 import org.portablejava.callgraph.CallGraph.CallSite;
 import org.portablejava.callgraph.CallGraph.ClassNode;
 import org.portablejava.callgraph.CallGraph.MethodNode;

@@ -3,10 +3,10 @@ package org.portablejava.analysis;
 import org.portablejava.analysis.results.BasicCallGraphAnalysis;
 import org.portablejava.analysis.results.CallPath;
 import org.portablejava.analysis.results.StrictfpSafetyAnalysis;
-import org.portablejava.callgraph.Root;
 import org.portablejava.callgraph.CallGraph.CallSite;
 import org.portablejava.callgraph.CallGraph.ClassNode;
 import org.portablejava.callgraph.CallGraph.MethodNode;
+import org.portablejava.callgraph.Root;
 
 public class StrictfpSafetyAnalyzer {
     private StrictfpSafetyAnalysis result;
