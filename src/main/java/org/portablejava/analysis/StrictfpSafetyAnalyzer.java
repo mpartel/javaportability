@@ -31,15 +31,17 @@ public class StrictfpSafetyAnalyzer {
     private void analyzeMethod(MethodNode method) {
         if (!isAnalyzed(method)) {
             markAnalyzed(method);
-            if (!isLocallySafe(method)) {
-                result.unsafeCallPaths.put(method, new CallPath(method));
-            } else {
-                for (CallSite call : method.getOutgoingCalls()) {
-                    MethodNode to = call.getTo();
-                    analyzeMethod(to);
-                    CallPath unsafe = result.unsafeCallPaths.get(to);
-                    if (unsafe != null) {
-                        result.unsafeCallPaths.put(method, new CallPath(method, unsafe));
+            if (!isAssumedSafe(method)) {
+                if (!isLocallySafe(method)) {
+                    result.unsafeCallPaths.put(method, new CallPath(method));
+                } else {
+                    for (CallSite call : method.getOutgoingCalls()) {
+                        MethodNode to = call.getTo();
+                        analyzeMethod(to);
+                        CallPath unsafe = result.unsafeCallPaths.get(to);
+                        if (unsafe != null) {
+                            result.unsafeCallPaths.put(method, new CallPath(method, unsafe));
+                        }
                     }
                 }
             }
@@ -55,11 +57,15 @@ public class StrictfpSafetyAnalyzer {
     }
 
     private boolean isLocallySafe(MethodNode node) {
-        return !isInherentlyUnsafe(node) && (!doesFpMathLocally(node) || isStrictfp(node) || isWhitelisted(node));
+        return !isAssumedUnsafe(node) && (!doesFpMathLocally(node) || isStrictfp(node) || isWhitelisted(node));
     }
     
-    private boolean isInherentlyUnsafe(MethodNode node) {
-        return result.settings.inherentlyUnsafe.containsMethod(node.getPath());
+    private boolean isAssumedSafe(MethodNode node) {
+        return result.settings.assumedSafe.containsMethod(node.getPath());
+    }
+    
+    private boolean isAssumedUnsafe(MethodNode node) {
+        return result.settings.assumedUnsafe.containsMethod(node.getPath());
     }
 
     private boolean doesFpMathLocally(MethodNode node) {

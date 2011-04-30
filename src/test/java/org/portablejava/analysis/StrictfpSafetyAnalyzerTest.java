@@ -85,7 +85,7 @@ public class StrictfpSafetyAnalyzerTest {
     }
     
     @Test
-    public void testMethodsOnFpmathWhitelistAreNeverUnsafe() {
+    public void testMethodsOnFpmathWhitelistAreSafeDespiteFpMath() {
         ClassNode a = cg.addClass("A", null);
         MethodNode m1 = a.addMethod("m1", mt);
         
@@ -99,19 +99,76 @@ public class StrictfpSafetyAnalyzerTest {
     }
     
     @Test
-    public void testMethodMarkedInherentlyUnsafeAreAlwaysUnsafe() {
+    public void testCallPathsAcrossMethodMarkedInherentlySafeAreAlwaysSafe() {
+        ClassNode a = cg.addClass("A", null);
+        MethodNode root = a.addMethod("root", mt);
+        MethodNode safe = a.addMethod("safe", mt);
+        MethodNode unsafe = a.addMethod("unsafe", mt);
+        cg.addCall(root, safe);
+        cg.addCall(safe, unsafe);
+        
+        settings.assumedSafe = new SimpleNodeSet();
+        ((SimpleNodeSet)settings.assumedSafe).addMethod(safe.getPath());
+        basic.localFpMathMethods.add(unsafe);
+        
+        StrictfpSafetyAnalysis result = analyzeFrom(root);
+        
+        assertNull(result.unsafeCallPaths.get(root));
+    }
+    
+    @Test
+    public void testCallPathsGoingPastAMethodAssumedSafeMayBeUnsafe() {
+        ClassNode a = cg.addClass("A", null);
+        MethodNode root = a.addMethod("root", mt);
+        MethodNode safe = a.addMethod("safe", mt);
+        MethodNode sidestep = a.addMethod("sidestep", mt);
+        MethodNode unsafe = a.addMethod("unsafe", mt);
+        cg.addCall(root, safe);
+        cg.addCall(safe, unsafe);
+        cg.addCall(root, sidestep);
+        cg.addCall(sidestep, unsafe);
+        
+        settings.assumedSafe = new SimpleNodeSet();
+        ((SimpleNodeSet)settings.assumedSafe).addMethod(safe.getPath());
+        basic.localFpMathMethods.add(unsafe);
+        
+        StrictfpSafetyAnalysis result = analyzeFrom(root);
+        
+        assertEquals(CallPath.make(root, sidestep, unsafe), result.unsafeCallPaths.get(root));
+    }
+    
+    @Test
+    public void testMethodAssumedSafeIsSafeEvenIfItDoesUnsafeMath() {
+        ClassNode a = cg.addClass("A", null);
+        MethodNode m1 = a.addMethod("m1", mt);
+        MethodNode m2 = a.addMethod("m2", mt);
+        MethodNode m3 = a.addMethod("m3", mt);
+        cg.addCall(m1, m2);
+        cg.addCall(m2, m3);
+        
+        settings.assumedSafe = new SimpleNodeSet();
+        ((SimpleNodeSet)settings.assumedSafe).addMethod(m2.getPath());
+        basic.localFpMathMethods.add(m3);
+        
+        assertNull(analyzeFrom(m1).unsafeCallPaths.get(m1));
+    }
+    
+    @Test
+    public void testMethodAssumedUnsafeAreAlwaysUnsafe() {
         ClassNode a = cg.addClass("A", null);
         MethodNode m1 = a.addMethod("m1", mt);
         MethodNode m2 = a.addMethod("m2", mt);
         cg.addCall(m1, m2);
         
-        settings.inherentlyUnsafe = new SimpleNodeSet();
-        ((SimpleNodeSet)settings.inherentlyUnsafe).addMethod(m2.getPath());
+        settings.assumedUnsafe = new SimpleNodeSet();
+        ((SimpleNodeSet)settings.assumedUnsafe).addMethod(m2.getPath());
         
         StrictfpSafetyAnalysis result = analyzeFrom(m1);
         
         assertEquals(CallPath.make(m1, m2), result.unsafeCallPaths.get(m1));
     }
+    
+    //TODO: assumedUnsafe blacklist should be prioritized
     
     
 

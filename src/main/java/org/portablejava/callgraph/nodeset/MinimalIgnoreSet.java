@@ -1,11 +1,10 @@
 package org.portablejava.callgraph.nodeset;
 
-import org.portablejava.analysis.AnalysisSettings;
 import org.portablejava.misc.MethodPath;
 
 /**
  * Contains array classes, since they can never be discovered.
- * This is automatically included by {@link AnalysisSettings}.
+ * This is used automatically when needed.
  */
 public class MinimalIgnoreSet implements NodeSet {
 

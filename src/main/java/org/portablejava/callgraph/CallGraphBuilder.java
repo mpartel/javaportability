@@ -18,13 +18,18 @@ import org.portablejava.analysis.AnalysisSettings;
 import org.portablejava.analysis.results.BasicCallGraphAnalysis;
 import org.portablejava.callgraph.CallGraph.ClassNode;
 import org.portablejava.callgraph.CallGraph.MethodNode;
+import org.portablejava.callgraph.nodeset.MinimalIgnoreSet;
+import org.portablejava.callgraph.nodeset.NodeSet;
+import org.portablejava.callgraph.nodeset.NodeSets;
+import org.portablejava.loaders.ClassFileLoader;
 import org.portablejava.misc.CheckedExceptionWrapper;
 import org.portablejava.misc.MethodPath;
 
 public class CallGraphBuilder extends EmptyVisitor {
 
     private boolean traceEnabled;
-    private AnalysisSettings settings;
+    private ClassFileLoader classFileLoader;
+    private NodeSet ignoreSet;
     private CallGraph callGraph;
     private BasicCallGraphAnalysis result;
     private Queue<String> classDiscoveryQueue;
@@ -32,7 +37,8 @@ public class CallGraphBuilder extends EmptyVisitor {
     private HashMap<MethodNode, List<MethodPath>> unanalyzedCalls;
     
     public CallGraphBuilder(AnalysisSettings settings) {
-        this.settings = settings;
+        this.classFileLoader = settings.classFileLoader;
+        this.ignoreSet = NodeSets.union(new MinimalIgnoreSet(), settings.ignoreSet);
         this.callGraph = new CallGraph();
         this.result = new BasicCallGraphAnalysis(settings, callGraph);
         this.classDiscoveryQueue = new LinkedList<String>();
@@ -104,11 +110,11 @@ public class CallGraphBuilder extends EmptyVisitor {
     }
     
     private boolean shouldIgnoreClass(String className) {
-        return settings.ignoreSet.containsClass(className);
+        return ignoreSet.containsClass(className);
     }
     
     private boolean shouldIgnoreMethod(MethodPath path) {
-        return  settings.ignoreSet.containsMethod(path);
+        return ignoreSet.containsMethod(path);
     }
     
     private void enqueueMethodsInRoot(Root root) {
@@ -126,7 +132,7 @@ public class CallGraphBuilder extends EmptyVisitor {
         if (!isBasicArrayClass(internalName) && !shouldIgnoreClass(internalName)) {
             trace("Discovering class " + internalName);
             
-            ClassReader reader = settings.classFileLoader.loadClass(internalName);
+            ClassReader reader = classFileLoader.loadClass(internalName);
             ClassDiscoverer discoverer = new ClassDiscoverer();
             reader.accept(discoverer, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
             return discoverer.getClassNode();

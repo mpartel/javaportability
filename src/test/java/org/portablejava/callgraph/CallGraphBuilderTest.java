@@ -74,7 +74,8 @@ public class CallGraphBuilderTest {
         SimpleNodeSet ignores = new SimpleNodeSet();
         ignores.addClass(Simple.class);
         
-        AnalysisSettings settings = new AnalysisSettings(loader, ignores, new EmptyNodeSet(), new EmptyNodeSet());
+        AnalysisSettings settings = new AnalysisSettings(loader);
+        settings.ignoreSet = ignores;
         CallGraphBuilder builder = new CallGraphBuilder(settings);
         builder.addRoot(new Root(Simple.class));
         
@@ -530,7 +531,8 @@ public class CallGraphBuilderTest {
     private BasicCallGraphAnalysis build(NodeSet ignores, Root... roots) {
         try {
             ClassFileLoader loader = new DefaultClassFileLoader();
-            AnalysisSettings settings = new AnalysisSettings(loader, ignores, new EmptyNodeSet(), new EmptyNodeSet());
+            AnalysisSettings settings = new AnalysisSettings(loader);
+            settings.ignoreSet = ignores;
             CallGraphBuilder builder = new CallGraphBuilder(settings);
             for (Root root : roots) {
                 builder.addRoot(root);
