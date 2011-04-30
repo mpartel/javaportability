@@ -34,10 +34,6 @@ public class WildcardNodeSet implements NodeSet {
     
     @Override
     public boolean containsMethod(MethodPath path) {
-        if (this.containsClass(path.getOwner())) {
-            return true;
-        } else {
-            return false;
-        }
+        return this.containsClass(path.getOwner());
     }
 }
