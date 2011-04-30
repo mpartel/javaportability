@@ -150,7 +150,7 @@ public class CallGraphBuilder extends EmptyVisitor {
         
         MethodNode methodNode = getMethodNode(methodPath);
         
-        if (result.basicAnalysisDoneMethods().contains(methodNode)) {
+        if (result.basicAnalysisDoneMethods.contains(methodNode)) {
             trace("Already analyzed method " + methodPath);
             return true;
         }
@@ -187,7 +187,7 @@ public class CallGraphBuilder extends EmptyVisitor {
     }
     
     private void processCallsFromMethod(MethodNode methodNode) {
-        result.basicAnalysisDoneMethods().add(methodNode);
+        result.basicAnalysisDoneMethods.add(methodNode);
         
         List<MethodPath> calls = unanalyzedCalls.remove(methodNode);
         
@@ -199,7 +199,7 @@ public class CallGraphBuilder extends EmptyVisitor {
             MethodNode calleeNode = getMethodNode(callee);
             callGraph.addCall(methodNode, calleeNode);
             
-            if (!result.basicAnalysisDoneMethods().contains(calleeNode)) {
+            if (!result.basicAnalysisDoneMethods.contains(calleeNode)) {
                 methodQueue.add(callee);
             }
             
@@ -260,10 +260,10 @@ public class CallGraphBuilder extends EmptyVisitor {
             
             MethodNode method = cls.addMethod(name, new MethodType(desc));
             if (isStrictfp(access)) {
-                result.strictfpMethods().add(method);
+                result.strictfpMethods.add(method);
             }
             if (isNative(access)) {
-                result.nativeMethods().add(method);
+                result.nativeMethods.add(method);
             }
             
             return new MethodDiscoverer(method);
@@ -302,7 +302,7 @@ public class CallGraphBuilder extends EmptyVisitor {
         @Override
         public void visitInsn(int opcode) {
             if (!foundFpMath && hasFloatResult(opcode)) {
-                result.localFpMathMethods().add(methodNode);
+                result.localFpMathMethods.add(methodNode);
                 foundFpMath = true;
             }
         }

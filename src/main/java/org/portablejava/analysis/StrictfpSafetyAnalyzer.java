@@ -20,7 +20,7 @@ public class StrictfpSafetyAnalyzer {
     }
     
     public void addRoot(Root root) {
-        ClassNode cls = result.callGraph().getClass(root.getClassName());
+        ClassNode cls = result.callGraph.getClass(root.getClassName());
         for (MethodNode m : cls.getMethodsIncludingInherited()) {
             if (root.matchesMethod(m)) {
                 analyzeMethod(m);
@@ -32,14 +32,14 @@ public class StrictfpSafetyAnalyzer {
         if (!isAnalyzed(method)) {
             markAnalyzed(method);
             if (!isLocallySafe(method)) {
-                result.unsafeCallPaths().put(method, new CallPath(method));
+                result.unsafeCallPaths.put(method, new CallPath(method));
             } else {
                 for (CallSite call : method.getOutgoingCalls()) {
                     MethodNode to = call.getTo();
                     analyzeMethod(to);
-                    CallPath unsafe = result.unsafeCallPaths().get(to);
+                    CallPath unsafe = result.unsafeCallPaths.get(to);
                     if (unsafe != null) {
-                        result.unsafeCallPaths().put(method, new CallPath(method, unsafe));
+                        result.unsafeCallPaths.put(method, new CallPath(method, unsafe));
                     }
                 }
             }
@@ -47,11 +47,11 @@ public class StrictfpSafetyAnalyzer {
     }
     
     private boolean isAnalyzed(MethodNode method) {
-        return result.strictfpAnalysisDoneMethods().contains(method);
+        return result.strictfpAnalysisDoneMethods.contains(method);
     }
 
     private void markAnalyzed(MethodNode method) {
-        result.strictfpAnalysisDoneMethods().add(method);
+        result.strictfpAnalysisDoneMethods.add(method);
     }
 
     private boolean isLocallySafe(MethodNode node) {
@@ -59,18 +59,18 @@ public class StrictfpSafetyAnalyzer {
     }
     
     private boolean isInherentlyUnsafe(MethodNode node) {
-        return result.settings().inherentlyUnsafe.containsMethod(node.getPath());
+        return result.settings.inherentlyUnsafe.containsMethod(node.getPath());
     }
 
     private boolean doesFpMathLocally(MethodNode node) {
-        return result.localFpMathMethods().contains(node);
+        return result.localFpMathMethods.contains(node);
     }
 
     private boolean isStrictfp(MethodNode node) {
-        return result.strictfpMethods().contains(node);
+        return result.strictfpMethods.contains(node);
     }
 
     private boolean isWhitelisted(MethodNode node) {
-        return result.settings().fpmathWhitelist.containsMethod(node.getPath());
+        return result.settings.fpmathWhitelist.containsMethod(node.getPath());
     }
 }

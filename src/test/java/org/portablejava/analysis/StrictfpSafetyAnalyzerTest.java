@@ -42,12 +42,12 @@ public class StrictfpSafetyAnalyzerTest {
         cg.addCall(m1, m2);
         cg.addCall(m2, m1);
         
-        basic.localFpMathMethods().add(m2);
-        basic.strictfpMethods().add(m2);
+        basic.localFpMathMethods.add(m2);
+        basic.strictfpMethods.add(m2);
         
         StrictfpSafetyAnalysis result = analyzeFrom(m1);
         
-        assertTrue(result.unsafeCallPaths().isEmpty());
+        assertTrue(result.unsafeCallPaths.isEmpty());
     }
     
     @Test
@@ -55,11 +55,11 @@ public class StrictfpSafetyAnalyzerTest {
         ClassNode a = cg.addClass("A", null);
         MethodNode m1 = a.addMethod("m1", mt);
         
-        basic.localFpMathMethods().add(m1);
+        basic.localFpMathMethods.add(m1);
         
         StrictfpSafetyAnalysis result = analyzeFrom(m1);
         
-        assertEquals(CallPath.make(m1), result.unsafeCallPaths().get(m1));
+        assertEquals(CallPath.make(m1), result.unsafeCallPaths.get(m1));
     }
     
     @Test
@@ -75,13 +75,13 @@ public class StrictfpSafetyAnalyzerTest {
         cg.addCall(m3, m1);
         cg.addCall(m3, unsafe);
         
-        basic.localFpMathMethods().add(m2);
-        basic.strictfpMethods().add(m2);
-        basic.localFpMathMethods().add(unsafe);
+        basic.localFpMathMethods.add(m2);
+        basic.strictfpMethods.add(m2);
+        basic.localFpMathMethods.add(unsafe);
         
         StrictfpSafetyAnalysis result = analyzeFrom(m1);
         
-        assertEquals(CallPath.make(m1, m2, m3, unsafe), result.unsafeCallPaths().get(m1));
+        assertEquals(CallPath.make(m1, m2, m3, unsafe), result.unsafeCallPaths.get(m1));
     }
     
     @Test
@@ -91,11 +91,11 @@ public class StrictfpSafetyAnalyzerTest {
         
         settings.fpmathWhitelist = new SimpleNodeSet();
         ((SimpleNodeSet)settings.fpmathWhitelist).addMethod(m1.getPath());
-        basic.localFpMathMethods().add(m1);
+        basic.localFpMathMethods.add(m1);
         
         StrictfpSafetyAnalysis result = analyzeFrom(m1);
         
-        assertNull(result.unsafeCallPaths().get(m1));
+        assertNull(result.unsafeCallPaths.get(m1));
     }
     
     @Test
@@ -110,7 +110,7 @@ public class StrictfpSafetyAnalyzerTest {
         
         StrictfpSafetyAnalysis result = analyzeFrom(m1);
         
-        assertEquals(CallPath.make(m1, m2), result.unsafeCallPaths().get(m1));
+        assertEquals(CallPath.make(m1, m2), result.unsafeCallPaths.get(m1));
     }
     
     

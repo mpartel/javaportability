@@ -13,12 +13,12 @@ import org.portablejava.callgraph.CallGraphBuilder;
  * A record of the immediate information obtained by {@link CallGraphBuilder}.
  */
 public class BasicCallGraphAnalysis {
-    protected AnalysisSettings settings;
-    protected CallGraph callGraph;
-    protected Set<MethodNode> localFpMathMethods;
-    protected Set<MethodNode> nativeMethods;
-    protected Set<MethodNode> strictfpMethods;
-    protected Set<MethodNode> basicAnalysisDoneMethods;
+    public AnalysisSettings settings;
+    public CallGraph callGraph;
+    public Set<MethodNode> localFpMathMethods;
+    public Set<MethodNode> nativeMethods;
+    public Set<MethodNode> strictfpMethods;
+    public Set<MethodNode> basicAnalysisDoneMethods;
     
     public BasicCallGraphAnalysis(AnalysisSettings settings, CallGraph callGraph) {
         this.settings = settings;
@@ -36,29 +36,5 @@ public class BasicCallGraphAnalysis {
         this.nativeMethods = Collections.unmodifiableSet(source.nativeMethods);
         this.strictfpMethods = Collections.unmodifiableSet(source.strictfpMethods);
         this.basicAnalysisDoneMethods = Collections.unmodifiableSet(source.basicAnalysisDoneMethods);
-    }
-    
-    public AnalysisSettings settings() {
-        return settings;
-    }
-    
-    public CallGraph callGraph() {
-        return callGraph;
-    }
-    
-    public Set<MethodNode> localFpMathMethods() {
-        return localFpMathMethods;
-    }
-    
-    public Set<MethodNode> nativeMethods() {
-        return nativeMethods;
-    }
-    
-    public Set<MethodNode> strictfpMethods() {
-        return strictfpMethods;
-    }
-    
-    public Set<MethodNode> basicAnalysisDoneMethods() {
-        return basicAnalysisDoneMethods;
     }
 }

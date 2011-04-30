@@ -29,13 +29,13 @@ public class Reporter {
         this.output = output;
         this.roots = roots;
         this.result = result;
-        findRootMethods(result.callGraph());
+        findRootMethods(result.callGraph);
         writeReport();
     }
     
     private void writeReport() throws IOException {
         writeln("Stats:");
-        writeln("* Classes visited: " + result.callGraph().getClasses().size());
+        writeln("* Classes visited: " + result.callGraph.getClasses().size());
         writeln();
         writeln("Unsafe call paths:");
         writeUnsafeCallPaths();
@@ -44,7 +44,7 @@ public class Reporter {
 
     private void writeUnsafeCallPaths() throws IOException {
         for (MethodNode root : rootMethods) {
-            CallPath path = result.unsafeCallPaths().get(root);
+            CallPath path = result.unsafeCallPaths.get(root);
             if (path != null) {
                 writeUnsafePath(root, path);
             }

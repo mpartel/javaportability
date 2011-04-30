@@ -78,7 +78,7 @@ public class CallGraphBuilderTest {
         CallGraphBuilder builder = new CallGraphBuilder(settings);
         builder.addRoot(new Root(Simple.class));
         
-        assertFalse(builder.getResult().callGraph().hasClass(Simple.class));
+        assertFalse(builder.getResult().callGraph.hasClass(Simple.class));
     }
     
     
@@ -146,17 +146,17 @@ public class CallGraphBuilderTest {
     public void testUsingRootClassesAnalyzesCorrectMethods() {
         BasicCallGraphAnalysis result1 = build(CyclicOne.class);
         BasicCallGraphAnalysis result2 = build(CyclicTwo.class);
-        CallGraph cg1 = result1.callGraph();
-        CallGraph cg2 = result2.callGraph();
+        CallGraph cg1 = result1.callGraph;
+        CallGraph cg2 = result2.callGraph;
         MethodNode cg1Foo = cg1.getClass(CyclicTwo.class).getMethod("foo", mt("()V"));
         MethodNode cg1Bar = cg1.getClass(CyclicTwo.class).getMethod("bar", mt("()V"));
         MethodNode cg2Foo = cg2.getClass(CyclicTwo.class).getMethod("foo", mt("()V"));
         MethodNode cg2Bar = cg2.getClass(CyclicTwo.class).getMethod("bar", mt("()V"));
         
-        assertTrue(result1.basicAnalysisDoneMethods().contains(cg1Foo));
-        assertFalse(result1.basicAnalysisDoneMethods().contains(cg1Bar));
-        assertTrue(result2.basicAnalysisDoneMethods().contains(cg2Foo));
-        assertTrue(result2.basicAnalysisDoneMethods().contains(cg2Bar));
+        assertTrue(result1.basicAnalysisDoneMethods.contains(cg1Foo));
+        assertFalse(result1.basicAnalysisDoneMethods.contains(cg1Bar));
+        assertTrue(result2.basicAnalysisDoneMethods.contains(cg2Foo));
+        assertTrue(result2.basicAnalysisDoneMethods.contains(cg2Bar));
     }
     
     
@@ -252,15 +252,15 @@ public class CallGraphBuilderTest {
     @Test
     public void testNotDoingTooMuchAnalysis() {
         BasicCallGraphAnalysis result = build(new MethodPath(Irrelevant.class, "noop", "()V"));
-        CallGraph cg = result.callGraph();
+        CallGraph cg = result.callGraph;
         if (cg.hasClass(Simple.class)) {
             fail("The class Simple should not have been loaded into the call graph");
         }
         
         MethodNode noop = cg.getClass(Irrelevant.class).getMethod("noop", mt("()V"));
         MethodNode uninteresting = cg.getClass(Irrelevant.class).getMethod("uninteresting", mt("()I"));
-        assertTrue(result.basicAnalysisDoneMethods().contains(noop));
-        assertFalse(result.basicAnalysisDoneMethods().contains(uninteresting));
+        assertTrue(result.basicAnalysisDoneMethods.contains(noop));
+        assertFalse(result.basicAnalysisDoneMethods.contains(uninteresting));
     }
     
     
@@ -291,22 +291,22 @@ public class CallGraphBuilderTest {
             new MethodPath(PartlySfp.class, "nonsfp", "(D)D"),
             new MethodPath(FullySfp.class, "foo", "(D)D")
         );
-        CallGraph cg = result.callGraph();
+        CallGraph cg = result.callGraph;
         
         MethodNode sfp = cg.getClass(PartlySfp.class).getMethod("sfp", mt("(D)D"));
         MethodNode nonsfp = cg.getClass(PartlySfp.class).getMethod("nonsfp", mt("(D)D"));
         MethodNode safe = cg.getClass(PartlySfp.class).getMethod("safe", mt("(D)D"));
         MethodNode foo = cg.getClass(FullySfp.class).getMethod("foo", mt("(D)D"));
         
-        assertTrue(result.localFpMathMethods().contains(sfp));
-        assertTrue(result.localFpMathMethods().contains(nonsfp));
-        assertFalse(result.localFpMathMethods().contains(safe));
-        assertTrue(result.localFpMathMethods().contains(foo));
+        assertTrue(result.localFpMathMethods.contains(sfp));
+        assertTrue(result.localFpMathMethods.contains(nonsfp));
+        assertFalse(result.localFpMathMethods.contains(safe));
+        assertTrue(result.localFpMathMethods.contains(foo));
         
-        assertTrue(result.strictfpMethods().contains(sfp));
-        assertFalse(result.strictfpMethods().contains(nonsfp));
-        assertFalse(result.strictfpMethods().contains(safe));
-        assertTrue(result.strictfpMethods().contains(foo));
+        assertTrue(result.strictfpMethods.contains(sfp));
+        assertFalse(result.strictfpMethods.contains(nonsfp));
+        assertFalse(result.strictfpMethods.contains(safe));
+        assertTrue(result.strictfpMethods.contains(foo));
     }
     
     
@@ -319,12 +319,12 @@ public class CallGraphBuilderTest {
     @Test
     public void testNativeMethodDiscovery() {
         BasicCallGraphAnalysis result = build(new MethodPath(WithNative.class, "foo", "()V"));
-        CallGraph cg = result.callGraph();
+        CallGraph cg = result.callGraph;
         MethodNode foo = cg.getClass(WithNative.class).getMethod("foo", mt("()V"));
         MethodNode bar = cg.getClass(WithNative.class).getMethod("bar", mt("()V"));
         
-        assertTrue(result.nativeMethods().contains(foo));
-        assertFalse(result.nativeMethods().contains(bar));
+        assertTrue(result.nativeMethods.contains(foo));
+        assertFalse(result.nativeMethods.contains(bar));
     }
     
     
@@ -344,7 +344,7 @@ public class CallGraphBuilderTest {
         ignores.addMethod(new MethodPath(CallToIgnoredMethod.class, "uninteresting", "()V"));
         
         BasicCallGraphAnalysis result = build(ignores, new MethodPath(CallToIgnoredMethod.class, "foo", "()V"));
-        CallGraph cg = result.callGraph();
+        CallGraph cg = result.callGraph;
         MethodNode foo = cg.getClass(CallToIgnoredMethod.class).getMethod("foo", mt("()V"));
         
         assertTrue(foo.getOutgoingCalls().isEmpty());
@@ -492,15 +492,15 @@ public class CallGraphBuilderTest {
     
     
     private CallGraph buildCg(MethodPath... methods) {
-        return build(methods).callGraph();
+        return build(methods).callGraph;
     }
     
     private CallGraph buildCg(Class<?>... classes) {
-        return build(classes).callGraph();
+        return build(classes).callGraph;
     }
     
     private CallGraph buildCg(NodeSet ignores, MethodPath... methods) {
-        return build(ignores, methods).callGraph();
+        return build(ignores, methods).callGraph;
     }
     
     private BasicCallGraphAnalysis build(MethodPath... methods) {

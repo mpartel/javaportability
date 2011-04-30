@@ -10,9 +10,8 @@ import org.portablejava.callgraph.CallGraph;
 import org.portablejava.callgraph.CallGraph.MethodNode;
 
 public class StrictfpSafetyAnalysis extends BasicCallGraphAnalysis {
-
-    protected Set<MethodNode> strictfpAnalysisDoneMethods;
-    protected Map<MethodNode, CallPath> unsafeCalls;
+    public Set<MethodNode> strictfpAnalysisDoneMethods;
+    public Map<MethodNode, CallPath> unsafeCallPaths;
     
     public StrictfpSafetyAnalysis(AnalysisSettings settings, CallGraph callGraph) {
         super(settings, callGraph);
@@ -26,15 +25,6 @@ public class StrictfpSafetyAnalysis extends BasicCallGraphAnalysis {
     
     private void init() {
         this.strictfpAnalysisDoneMethods = new HashSet<MethodNode>();
-        this.unsafeCalls = new HashMap<MethodNode, CallPath>();
+        this.unsafeCallPaths = new HashMap<MethodNode, CallPath>();
     }
-    
-    public Set<MethodNode> strictfpAnalysisDoneMethods() {
-        return strictfpAnalysisDoneMethods;
-    }
-    
-    public Map<MethodNode, CallPath> unsafeCallPaths() {
-        return unsafeCalls;
-    }
-    
 }
