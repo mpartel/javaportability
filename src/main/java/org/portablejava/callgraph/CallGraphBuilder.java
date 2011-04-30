@@ -14,35 +14,27 @@ import org.objectweb.asm.MethodType;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.EmptyVisitor;
+import org.portablejava.analysis.AnalysisSettings;
 import org.portablejava.analysis.results.BasicCallGraphAnalysis;
 import org.portablejava.callgraph.CallGraph.ClassNode;
 import org.portablejava.callgraph.CallGraph.MethodNode;
-import org.portablejava.callgraph.nodeset.EmptyNodeSet;
-import org.portablejava.callgraph.nodeset.NodeSet;
-import org.portablejava.loaders.ClassFileLoader;
 import org.portablejava.misc.CheckedExceptionWrapper;
 import org.portablejava.misc.MethodPath;
 
 public class CallGraphBuilder extends EmptyVisitor {
 
     private boolean traceEnabled;
+    private AnalysisSettings settings;
     private CallGraph callGraph;
     private BasicCallGraphAnalysis result;
-    private ClassFileLoader classFileLoader;
-    private NodeSet ignoreSet;
     private Queue<String> classDiscoveryQueue;
     private Queue<MethodPath> methodQueue;
     private HashMap<MethodNode, List<MethodPath>> unanalyzedCalls;
     
-    public CallGraphBuilder(ClassFileLoader classFileLoader) {
-        this(classFileLoader, new EmptyNodeSet());
-    }
-    
-    public CallGraphBuilder(ClassFileLoader classFileLoader, NodeSet ignoreSet) {
+    public CallGraphBuilder(AnalysisSettings settings) {
+        this.settings = settings;
         this.callGraph = new CallGraph();
-        this.result = new BasicCallGraphAnalysis(callGraph);
-        this.classFileLoader = classFileLoader;
-        this.ignoreSet = ignoreSet;
+        this.result = new BasicCallGraphAnalysis(settings, callGraph);
         this.classDiscoveryQueue = new LinkedList<String>();
         this.methodQueue = new LinkedList<MethodPath>();
         this.unanalyzedCalls = new HashMap<MethodNode, List<MethodPath>>();
@@ -55,7 +47,7 @@ public class CallGraphBuilder extends EmptyVisitor {
     public void addRoot(Root root) throws Exception {
         String className = root.getClassName();
         try {
-            if (!ignoreSet.containsClass(className)) {
+            if (!shouldIgnoreClass(className)) {
                 if (classNotYetDiscovered(className)) {
                     discoverClass(className);
                 }
@@ -112,11 +104,11 @@ public class CallGraphBuilder extends EmptyVisitor {
     }
     
     private boolean shouldIgnoreClass(String className) {
-        return className.startsWith("[") || ignoreSet.containsClass(className);
+        return settings.ignoreSet.containsClass(className);
     }
     
     private boolean shouldIgnoreMethod(MethodPath path) {
-        return shouldIgnoreClass(path.getOwner()) || ignoreSet.containsMethod(path);
+        return  settings.ignoreSet.containsMethod(path);
     }
     
     private void enqueueMethodsInRoot(Root root) {
@@ -134,7 +126,7 @@ public class CallGraphBuilder extends EmptyVisitor {
         if (!isBasicArrayClass(internalName) && !shouldIgnoreClass(internalName)) {
             trace("Discovering class " + internalName);
             
-            ClassReader reader = classFileLoader.loadClass(internalName);
+            ClassReader reader = settings.classFileLoader.loadClass(internalName);
             ClassDiscoverer discoverer = new ClassDiscoverer();
             reader.accept(discoverer, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
             return discoverer.getClassNode();

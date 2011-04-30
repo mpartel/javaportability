@@ -13,6 +13,7 @@ import org.portablejava.callgraph.CallGraph;
 import org.portablejava.callgraph.Root;
 import org.portablejava.callgraph.CallGraph.ClassNode;
 import org.portablejava.callgraph.CallGraph.MethodNode;
+import org.portablejava.loaders.DefaultClassFileLoader;
 
 public class StrictfpSafetyAnalyzerTest {
     
@@ -25,7 +26,8 @@ public class StrictfpSafetyAnalyzerTest {
     @Before
     public void setUp() {
         cg = new CallGraph();
-        basic = new BasicCallGraphAnalysis(cg);
+        AnalysisSettings settings = new AnalysisSettings(new DefaultClassFileLoader());
+        basic = new BasicCallGraphAnalysis(settings, cg);
         analyzer = new StrictfpSafetyAnalyzer(basic);
     }
     

@@ -2,7 +2,7 @@ package org.portablejava.callgraph.nodeset;
 
 import org.portablejava.misc.MethodPath;
 
-public class EmptyNodeSet implements NodeSet {
+public final class EmptyNodeSet implements NodeSet {
     
     public EmptyNodeSet() {
     }

@@ -11,10 +11,8 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.MethodType;
+import org.portablejava.analysis.AnalysisSettings;
 import org.portablejava.analysis.results.BasicCallGraphAnalysis;
-import org.portablejava.callgraph.CallGraph;
-import org.portablejava.callgraph.CallGraphBuilder;
-import org.portablejava.callgraph.Root;
 import org.portablejava.callgraph.CallGraph.CallSite;
 import org.portablejava.callgraph.CallGraph.ClassNode;
 import org.portablejava.callgraph.CallGraph.MethodNode;
@@ -64,7 +62,7 @@ public class CallGraphBuilderTest {
         ClassFileLoader loader = mock(ClassFileLoader.class);
         when(loader.loadClass(any(String.class))).thenThrow(new ClassNotFoundException());
         
-        CallGraphBuilder builder = new CallGraphBuilder(loader);
+        CallGraphBuilder builder = new CallGraphBuilder(new AnalysisSettings(loader));
         builder.addRoot(new Root("Nonexistent"));
         builder.getResult();
     }
@@ -76,7 +74,8 @@ public class CallGraphBuilderTest {
         SimpleNodeSet ignores = new SimpleNodeSet();
         ignores.addClass(Simple.class);
         
-        CallGraphBuilder builder = new CallGraphBuilder(loader, ignores);
+        AnalysisSettings settings = new AnalysisSettings(loader, ignores, new EmptyNodeSet(), new EmptyNodeSet());
+        CallGraphBuilder builder = new CallGraphBuilder(settings);
         builder.addRoot(new Root(Simple.class));
         
         assertFalse(builder.getResult().callGraph().hasClass(Simple.class));
@@ -483,7 +482,7 @@ public class CallGraphBuilderTest {
             }
         });
         
-        CallGraphBuilder builder = new CallGraphBuilder(loader);
+        CallGraphBuilder builder = new CallGraphBuilder(new AnalysisSettings(loader));
         
         builder.addRoot(new Root(ArrayCaller.class));
         builder.getResult();
@@ -513,24 +512,28 @@ public class CallGraphBuilderTest {
     }
     
     private BasicCallGraphAnalysis build(NodeSet ignores, MethodPath... methods) {
-        try {
-            CallGraphBuilder builder = new CallGraphBuilder(new DefaultClassFileLoader(), ignores);
-            for (MethodPath method : methods) {
-                builder.addRoot(new Root(method));
-            }
-            return builder.getResult();
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        Root[] roots = new Root[methods.length];
+        for (int i = 0; i < methods.length; ++i) {
+            roots[i] = new Root(methods[i]);
         }
+        return build(ignores, roots);
     }
     
     private BasicCallGraphAnalysis build(NodeSet ignores, Class<?>... classes) {
+        Root[] roots = new Root[classes.length];
+        for (int i = 0; i < classes.length; ++i) {
+            roots[i] = new Root(classes[i]);
+        }
+        return build(ignores, roots);
+    }
+    
+    private BasicCallGraphAnalysis build(NodeSet ignores, Root... roots) {
         try {
-            CallGraphBuilder builder = new CallGraphBuilder(new DefaultClassFileLoader(), ignores);
-            for (Class<?> cls : classes) {
-                builder.addRoot(new Root(cls));
+            ClassFileLoader loader = new DefaultClassFileLoader();
+            AnalysisSettings settings = new AnalysisSettings(loader, ignores, new EmptyNodeSet(), new EmptyNodeSet());
+            CallGraphBuilder builder = new CallGraphBuilder(settings);
+            for (Root root : roots) {
+                builder.addRoot(root);
             }
             return builder.getResult();
         } catch (RuntimeException e) {

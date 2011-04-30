@@ -3,12 +3,12 @@ package org.portablejava.app;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.portablejava.analysis.AnalysisSettings;
 import org.portablejava.analysis.StrictfpSafetyAnalyzer;
 import org.portablejava.analysis.results.BasicCallGraphAnalysis;
 import org.portablejava.analysis.results.StrictfpSafetyAnalysis;
 import org.portablejava.callgraph.CallGraphBuilder;
 import org.portablejava.callgraph.Root;
-import org.portablejava.callgraph.nodeset.EmptyNodeSet;
 import org.portablejava.loaders.ClassFileLoader;
 import org.portablejava.loaders.ClassPathClassFileLoader;
 import org.portablejava.loaders.DefaultClassFileLoader;
@@ -42,7 +42,6 @@ public class Main {
     private Appendable output;
     
     private List<Root> roots;
-    private ClassFileLoader classFileLoader;
     
     private Main(Settings settings) {
         this.settings = settings;
@@ -51,9 +50,10 @@ public class Main {
     
     private void run() throws Exception {
         roots = parseRoots();
-        classFileLoader = makeClassFileLoader();
-        BasicCallGraphAnalysis basicResult = buildCallgraph(classFileLoader);
-        StrictfpSafetyAnalysis sfpResult = doStrictfpSafetyAnalysis(classFileLoader, basicResult);
+        ClassFileLoader classFileLoader = makeClassFileLoader();
+        AnalysisSettings analysisSettings = new AnalysisSettings(classFileLoader);
+        BasicCallGraphAnalysis basicResult = buildCallgraph(analysisSettings);
+        StrictfpSafetyAnalysis sfpResult = doStrictfpSafetyAnalysis(basicResult);
         new Reporter(settings).writeReport(output, roots, sfpResult);
     }
     
@@ -80,8 +80,9 @@ public class Main {
         }
     }
     
-    private BasicCallGraphAnalysis buildCallgraph(ClassFileLoader classFileLoader) throws Exception {
-        CallGraphBuilder builder = new CallGraphBuilder(classFileLoader, new EmptyNodeSet());
+    private BasicCallGraphAnalysis buildCallgraph(AnalysisSettings analysisSettings) throws Exception {
+        
+        CallGraphBuilder builder = new CallGraphBuilder(analysisSettings);
         builder.setDebugTrace(settings.trace);
         if (settings.verbose) {
             System.out.println("Building call graph...");
@@ -92,7 +93,7 @@ public class Main {
         return builder.getResult();
     }
     
-    private StrictfpSafetyAnalysis doStrictfpSafetyAnalysis(ClassFileLoader classFileLoader, BasicCallGraphAnalysis basicResult) throws Exception {
+    private StrictfpSafetyAnalysis doStrictfpSafetyAnalysis(BasicCallGraphAnalysis basicResult) throws Exception {
         StrictfpSafetyAnalyzer analyzer = new StrictfpSafetyAnalyzer(basicResult);
         if (settings.verbose) {
             System.out.println("Analyzing strictfp safety...");
