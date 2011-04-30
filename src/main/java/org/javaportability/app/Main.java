@@ -51,8 +51,8 @@ public class Main {
     private void run() throws Exception {
         roots = parseRoots();
         ClassFileLoader classFileLoader = makeClassFileLoader();
-        AnalysisSettings analysisSettings = new AnalysisSettings(classFileLoader);
-        BasicCallGraphAnalysis basicResult = buildCallgraph(analysisSettings);
+        settings.analysisSettings = new AnalysisSettings(classFileLoader);
+        BasicCallGraphAnalysis basicResult = buildCallgraph();
         StrictfpSafetyAnalysis sfpResult = doStrictfpSafetyAnalysis(basicResult);
         new Reporter(settings).writeReport(output, roots, sfpResult);
     }
@@ -80,9 +80,8 @@ public class Main {
         }
     }
     
-    private BasicCallGraphAnalysis buildCallgraph(AnalysisSettings analysisSettings) throws Exception {
-        
-        CallGraphBuilder builder = new CallGraphBuilder(analysisSettings);
+    private BasicCallGraphAnalysis buildCallgraph() throws Exception {
+        CallGraphBuilder builder = new CallGraphBuilder(settings.analysisSettings);
         builder.setDebugTrace(settings.trace);
         if (settings.verbose) {
             System.out.println("Building call graph...");
