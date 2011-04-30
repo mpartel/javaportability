@@ -8,7 +8,7 @@ import org.portablejava.analysis.results.BasicCallGraphAnalysis;
 import org.portablejava.analysis.results.StrictfpSafetyAnalysis;
 import org.portablejava.callgraph.CallGraphBuilder;
 import org.portablejava.callgraph.Root;
-import org.portablejava.ignoreset.EmptyIgnoreSet;
+import org.portablejava.callgraph.nodeset.EmptyNodeSet;
 import org.portablejava.loaders.ClassFileLoader;
 import org.portablejava.loaders.ClassPathClassFileLoader;
 import org.portablejava.loaders.DefaultClassFileLoader;
@@ -81,7 +81,7 @@ public class Main {
     }
     
     private BasicCallGraphAnalysis buildCallgraph(ClassFileLoader classFileLoader) throws Exception {
-        CallGraphBuilder builder = new CallGraphBuilder(classFileLoader, new EmptyIgnoreSet());
+        CallGraphBuilder builder = new CallGraphBuilder(classFileLoader, new EmptyNodeSet());
         builder.setDebugTrace(settings.trace);
         if (settings.verbose) {
             System.out.println("Building call graph...");

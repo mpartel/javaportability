@@ -1,16 +1,16 @@
-package org.portablejava.ignoreset;
+package org.portablejava.callgraph.nodeset;
 
 import java.util.HashSet;
 
 import org.objectweb.asm.Type;
 import org.portablejava.misc.MethodPath;
 
-public class SimpleIgnoreSet implements IgnoreSet {
+public class SimpleNodeSet implements NodeSet {
     
     private HashSet<String> classNames;
     private HashSet<MethodPath> methods;
     
-    public SimpleIgnoreSet() {
+    public SimpleNodeSet() {
         classNames = new HashSet<String>();
         methods = new HashSet<MethodPath>();
     }

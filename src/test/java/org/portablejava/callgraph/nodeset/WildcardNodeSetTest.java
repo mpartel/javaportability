@@ -1,11 +1,11 @@
-package org.portablejava.ignoreset;
+package org.portablejava.callgraph.nodeset;
 
 import static org.junit.Assert.*;
 
 import org.junit.Test;
-import org.portablejava.ignoreset.WildcardIgnoreSet;
+import org.portablejava.callgraph.nodeset.WildcardNodeSet;
 
-public class WildcardIgnoreSetTest {
+public class WildcardNodeSetTest {
     @Test
     public void testEndingWithWildcard() {
         assertMatches("java.*", "java/lang/Object");
@@ -33,13 +33,13 @@ public class WildcardIgnoreSetTest {
     }
     
     private void assertMatches(String pattern, String cls) {
-        if (!new WildcardIgnoreSet(pattern).containsClass(cls)) {
+        if (!new WildcardNodeSet(pattern).containsClass(cls)) {
             fail("Expected wildcard " + pattern + " to match " + cls);
         }
     }
     
     private void assertNoMatch(String pattern, String cls) {
-        if (new WildcardIgnoreSet(pattern).containsClass(cls)) {
+        if (new WildcardNodeSet(pattern).containsClass(cls)) {
             fail("Didn't expect wildcard " + pattern + " to match " + cls);
         }
     }

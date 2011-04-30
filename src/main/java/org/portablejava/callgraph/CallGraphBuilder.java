@@ -17,8 +17,8 @@ import org.objectweb.asm.commons.EmptyVisitor;
 import org.portablejava.analysis.results.BasicCallGraphAnalysis;
 import org.portablejava.callgraph.CallGraph.ClassNode;
 import org.portablejava.callgraph.CallGraph.MethodNode;
-import org.portablejava.ignoreset.EmptyIgnoreSet;
-import org.portablejava.ignoreset.IgnoreSet;
+import org.portablejava.callgraph.nodeset.EmptyNodeSet;
+import org.portablejava.callgraph.nodeset.NodeSet;
 import org.portablejava.loaders.ClassFileLoader;
 import org.portablejava.misc.CheckedExceptionWrapper;
 import org.portablejava.misc.MethodPath;
@@ -29,16 +29,16 @@ public class CallGraphBuilder extends EmptyVisitor {
     private CallGraph callGraph;
     private BasicCallGraphAnalysis result;
     private ClassFileLoader classFileLoader;
-    private IgnoreSet ignoreSet;
+    private NodeSet ignoreSet;
     private Queue<String> classDiscoveryQueue;
     private Queue<MethodPath> methodQueue;
     private HashMap<MethodNode, List<MethodPath>> unanalyzedCalls;
     
     public CallGraphBuilder(ClassFileLoader classFileLoader) {
-        this(classFileLoader, new EmptyIgnoreSet());
+        this(classFileLoader, new EmptyNodeSet());
     }
     
-    public CallGraphBuilder(ClassFileLoader classFileLoader, IgnoreSet ignoreSet) {
+    public CallGraphBuilder(ClassFileLoader classFileLoader, NodeSet ignoreSet) {
         this.callGraph = new CallGraph();
         this.result = new BasicCallGraphAnalysis(callGraph);
         this.classFileLoader = classFileLoader;

@@ -1,10 +1,10 @@
-package org.portablejava.ignoreset;
+package org.portablejava.callgraph.nodeset;
 
 import org.portablejava.misc.MethodPath;
 
-public class EmptyIgnoreSet implements IgnoreSet {
+public class EmptyNodeSet implements NodeSet {
     
-    public EmptyIgnoreSet() {
+    public EmptyNodeSet() {
     }
     
     @Override

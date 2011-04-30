@@ -18,9 +18,9 @@ import org.portablejava.callgraph.Root;
 import org.portablejava.callgraph.CallGraph.CallSite;
 import org.portablejava.callgraph.CallGraph.ClassNode;
 import org.portablejava.callgraph.CallGraph.MethodNode;
-import org.portablejava.ignoreset.EmptyIgnoreSet;
-import org.portablejava.ignoreset.IgnoreSet;
-import org.portablejava.ignoreset.SimpleIgnoreSet;
+import org.portablejava.callgraph.nodeset.EmptyNodeSet;
+import org.portablejava.callgraph.nodeset.NodeSet;
+import org.portablejava.callgraph.nodeset.SimpleNodeSet;
 import org.portablejava.loaders.ClassFileLoader;
 import org.portablejava.loaders.DefaultClassFileLoader;
 import org.portablejava.misc.MethodPath;
@@ -73,7 +73,7 @@ public class CallGraphBuilderTest {
     public void testIgnoredRootClasses() throws Exception {
         ClassFileLoader loader = mock(ClassFileLoader.class);
         when(loader.loadClass(any(String.class))).thenReturn(null);
-        SimpleIgnoreSet ignores = new SimpleIgnoreSet();
+        SimpleNodeSet ignores = new SimpleNodeSet();
         ignores.addClass(Simple.class);
         
         CallGraphBuilder builder = new CallGraphBuilder(loader, ignores);
@@ -341,7 +341,7 @@ public class CallGraphBuilderTest {
     
     @Test
     public void testIgnoredMethods() {
-        SimpleIgnoreSet ignores = new SimpleIgnoreSet();
+        SimpleNodeSet ignores = new SimpleNodeSet();
         ignores.addMethod(new MethodPath(CallToIgnoredMethod.class, "uninteresting", "()V"));
         
         BasicCallGraphAnalysis result = build(ignores, new MethodPath(CallToIgnoredMethod.class, "foo", "()V"));
@@ -367,7 +367,7 @@ public class CallGraphBuilderTest {
     
     @Test
     public void testIgnoredClasses() {
-        SimpleIgnoreSet ignores = new SimpleIgnoreSet();
+        SimpleNodeSet ignores = new SimpleNodeSet();
         ignores.addClass(IgnoredClass.class);
         
         CallGraph cg = buildCg(ignores, new MethodPath(CallToIgnoredClass.class, "call", "()V"));
@@ -379,7 +379,7 @@ public class CallGraphBuilderTest {
     
     @Test
     public void testIgnoredSuperclass() {
-        SimpleIgnoreSet ignores = new SimpleIgnoreSet();
+        SimpleNodeSet ignores = new SimpleNodeSet();
         ignores.addClass(Super.class);
         
         CallGraph cg = buildCg(ignores, new MethodPath(Sub.class, "foo", "()V"));
@@ -500,19 +500,19 @@ public class CallGraphBuilderTest {
         return build(classes).callGraph();
     }
     
-    private CallGraph buildCg(IgnoreSet ignores, MethodPath... methods) {
+    private CallGraph buildCg(NodeSet ignores, MethodPath... methods) {
         return build(ignores, methods).callGraph();
     }
     
     private BasicCallGraphAnalysis build(MethodPath... methods) {
-        return build(new EmptyIgnoreSet(), methods);
+        return build(new EmptyNodeSet(), methods);
     }
     
     private BasicCallGraphAnalysis build(Class<?>... classes) {
-        return build(new EmptyIgnoreSet(), classes);
+        return build(new EmptyNodeSet(), classes);
     }
     
-    private BasicCallGraphAnalysis build(IgnoreSet ignores, MethodPath... methods) {
+    private BasicCallGraphAnalysis build(NodeSet ignores, MethodPath... methods) {
         try {
             CallGraphBuilder builder = new CallGraphBuilder(new DefaultClassFileLoader(), ignores);
             for (MethodPath method : methods) {
@@ -526,7 +526,7 @@ public class CallGraphBuilderTest {
         }
     }
     
-    private BasicCallGraphAnalysis build(IgnoreSet ignores, Class<?>... classes) {
+    private BasicCallGraphAnalysis build(NodeSet ignores, Class<?>... classes) {
         try {
             CallGraphBuilder builder = new CallGraphBuilder(new DefaultClassFileLoader(), ignores);
             for (Class<?> cls : classes) {

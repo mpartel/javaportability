@@ -1,13 +1,13 @@
-package org.portablejava.ignoreset;
+package org.portablejava.callgraph.nodeset;
 
 import java.util.regex.Pattern;
 
 import org.portablejava.misc.MethodPath;
 
-public class WildcardIgnoreSet implements IgnoreSet {
+public class WildcardNodeSet implements NodeSet {
     private Pattern pattern;
     
-    public WildcardIgnoreSet(String pattern) {
+    public WildcardNodeSet(String pattern) {
         String[] parts = pattern.replace('.', '/').split("\\*");
         StringBuilder regex = new StringBuilder(128);
         for (int i = 0; i < parts.length - 1; ++i) {
