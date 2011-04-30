@@ -61,7 +61,7 @@ public class StrictfpSafetyAnalyzer {
     }
     
     private boolean isAssumedSafe(MethodNode node) {
-        return result.settings.assumedSafe.containsMethod(node.getPath());
+        return !isAssumedUnsafe(node) && result.settings.assumedSafe.containsMethod(node.getPath());
     }
     
     private boolean isAssumedUnsafe(MethodNode node) {

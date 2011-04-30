@@ -2,15 +2,13 @@ package org.javaportability.analysis;
 
 import static org.junit.Assert.*;
 
-import org.javaportability.analysis.AnalysisSettings;
-import org.javaportability.analysis.StrictfpSafetyAnalyzer;
 import org.javaportability.analysis.results.BasicCallGraphAnalysis;
 import org.javaportability.analysis.results.CallPath;
 import org.javaportability.analysis.results.StrictfpSafetyAnalysis;
 import org.javaportability.callgraph.CallGraph;
-import org.javaportability.callgraph.Root;
 import org.javaportability.callgraph.CallGraph.ClassNode;
 import org.javaportability.callgraph.CallGraph.MethodNode;
+import org.javaportability.callgraph.Root;
 import org.javaportability.callgraph.nodeset.SimpleNodeSet;
 import org.javaportability.loaders.DefaultClassFileLoader;
 import org.junit.Before;
@@ -36,7 +34,7 @@ public class StrictfpSafetyAnalyzerTest {
     }
     
     @Test
-    public void testNoUnsafeMethod() {
+    public void testCaseWithNoUnsafeMethod() {
         ClassNode a = cg.addClass("A", null);
         MethodNode m1 = a.addMethod("m1", mt);
         MethodNode m2 = a.addMethod("m2", mt);
@@ -170,7 +168,24 @@ public class StrictfpSafetyAnalyzerTest {
         assertEquals(CallPath.make(m1, m2), result.unsafeCallPaths.get(m1));
     }
     
-    //TODO: assumedUnsafe blacklist should be prioritized
+    @Test
+    public void testAssumedUnsafeIsPrioritizedOverAssumedSafeAndAllowedFp() {
+        ClassNode a = cg.addClass("A", null);
+        MethodNode m1 = a.addMethod("m1", mt);
+        MethodNode m2 = a.addMethod("m2", mt);
+        cg.addCall(m1, m2);
+        
+        SimpleNodeSet m2Set = new SimpleNodeSet();
+        m2Set.addMethod(m2.getPath());
+        settings.assumedUnsafe = m2Set;
+        settings.assumedSafe = m2Set;
+        settings.allowedFpMath = m2Set;
+        basic.localFpMathMethods.add(m2);
+        
+        StrictfpSafetyAnalysis result = analyzeFrom(m1);
+        
+        assertEquals(CallPath.make(m1, m2), result.unsafeCallPaths.get(m1));
+    }
     
     
 
