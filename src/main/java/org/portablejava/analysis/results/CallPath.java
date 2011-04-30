@@ -3,6 +3,7 @@ package org.portablejava.analysis.results;
 import java.util.Iterator;
 
 import org.portablejava.callgraph.CallGraph.MethodNode;
+import org.portablejava.misc.Misc;
 
 public class CallPath implements Iterable<MethodNode> {
     private final MethodNode method;
@@ -61,6 +62,23 @@ public class CallPath implements Iterable<MethodNode> {
         }
     }
     
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(methodToString(this.method));
+        CallPath p = this.next;
+        while (p != null) {
+            sb.append(" -> ");
+            sb.append(methodToString(p.method));
+            p = p.next;
+        }
+        return sb.toString();
+    }
+    
+    private static String methodToString(MethodNode m) {
+        return Misc.shortClassName(m.getOwner()) + "::" + m.getName();
+    }
+
     private static class CallPathIterator implements Iterator<MethodNode> {
         private CallPath p;
         

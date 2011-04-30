@@ -21,6 +21,7 @@ public class BasicCallGraphAnalysis {
     protected Set<MethodNode> basicAnalysisDoneMethods;
     
     public BasicCallGraphAnalysis(AnalysisSettings settings, CallGraph callGraph) {
+        this.settings = settings;
         this.callGraph = callGraph;
         this.localFpMathMethods = new HashSet<MethodNode>();
         this.nativeMethods = new HashSet<MethodNode>();
@@ -35,6 +36,10 @@ public class BasicCallGraphAnalysis {
         this.nativeMethods = Collections.unmodifiableSet(source.nativeMethods);
         this.strictfpMethods = Collections.unmodifiableSet(source.strictfpMethods);
         this.basicAnalysisDoneMethods = Collections.unmodifiableSet(source.basicAnalysisDoneMethods);
+    }
+    
+    public AnalysisSettings settings() {
+        return settings;
     }
     
     public CallGraph callGraph() {

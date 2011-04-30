@@ -55,8 +55,22 @@ public class StrictfpSafetyAnalyzer {
     }
 
     private boolean isLocallySafe(MethodNode node) {
-        boolean localFp = result.localFpMathMethods().contains(node);
-        boolean sfp = result.strictfpMethods().contains(node);
-        return !localFp || sfp;
+        return !isInherentlyUnsafe(node) && (!doesFpMathLocally(node) || isStrictfp(node) || isWhitelisted(node));
+    }
+    
+    private boolean isInherentlyUnsafe(MethodNode node) {
+        return result.settings().inherentlyUnsafe.containsMethod(node.getPath());
+    }
+
+    private boolean doesFpMathLocally(MethodNode node) {
+        return result.localFpMathMethods().contains(node);
+    }
+
+    private boolean isStrictfp(MethodNode node) {
+        return result.strictfpMethods().contains(node);
+    }
+
+    private boolean isWhitelisted(MethodNode node) {
+        return result.settings().fpmathWhitelist.containsMethod(node.getPath());
     }
 }

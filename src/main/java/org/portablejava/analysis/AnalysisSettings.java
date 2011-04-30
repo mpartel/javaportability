@@ -7,10 +7,10 @@ import org.portablejava.callgraph.nodeset.NodeSets;
 import org.portablejava.loaders.ClassFileLoader;
 
 public class AnalysisSettings {
-    public final ClassFileLoader classFileLoader;
-    public final NodeSet ignoreSet;
-    public final NodeSet inherentlyUnsafe;
-    public final NodeSet fpmathWhitelist;
+    public ClassFileLoader classFileLoader;
+    public NodeSet ignoreSet;
+    public NodeSet inherentlyUnsafe;
+    public NodeSet fpmathWhitelist;
     
     public AnalysisSettings(ClassFileLoader classFileLoader) {
         this(classFileLoader, new EmptyNodeSet(), new EmptyNodeSet(), new EmptyNodeSet());
