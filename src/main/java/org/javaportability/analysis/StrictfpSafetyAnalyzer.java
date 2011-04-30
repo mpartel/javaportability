@@ -77,6 +77,6 @@ public class StrictfpSafetyAnalyzer {
     }
 
     private boolean isWhitelisted(MethodNode node) {
-        return result.settings.fpmathWhitelist.containsMethod(node.getPath());
+        return result.settings.allowedFpMath.containsMethod(node.getPath());
     }
 }

@@ -9,13 +9,13 @@ public class AnalysisSettings {
     public NodeSet ignoreSet;
     public NodeSet assumedSafe;
     public NodeSet assumedUnsafe;
-    public NodeSet fpmathWhitelist;
+    public NodeSet allowedFpMath;
     
     public AnalysisSettings(ClassFileLoader classFileLoader) {
         this.classFileLoader = classFileLoader;
         this.ignoreSet = new EmptyNodeSet();
         this.assumedSafe = new EmptyNodeSet();
         this.assumedUnsafe = new EmptyNodeSet();
-        this.fpmathWhitelist = new EmptyNodeSet();
+        this.allowedFpMath = new EmptyNodeSet();
     }
 }

@@ -91,8 +91,8 @@ public class StrictfpSafetyAnalyzerTest {
         ClassNode a = cg.addClass("A", null);
         MethodNode m1 = a.addMethod("m1", mt);
         
-        settings.fpmathWhitelist = new SimpleNodeSet();
-        ((SimpleNodeSet)settings.fpmathWhitelist).addMethod(m1.getPath());
+        settings.allowedFpMath = new SimpleNodeSet();
+        ((SimpleNodeSet)settings.allowedFpMath).addMethod(m1.getPath());
         basic.localFpMathMethods.add(m1);
         
         StrictfpSafetyAnalysis result = analyzeFrom(m1);
