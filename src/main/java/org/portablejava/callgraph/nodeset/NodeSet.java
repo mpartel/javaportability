@@ -3,7 +3,8 @@ package org.portablejava.callgraph.nodeset;
 import org.portablejava.misc.MethodPath;
 
 /**
- * A set of classes and/or methods.
+ * A set of class and/or method names. Used as whitelists, blacklists, ignorelists etc.
+ * 
  * If a class is in a set then all its methods should also be in the set.
  */
 public interface NodeSet {
