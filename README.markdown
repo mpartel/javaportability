@@ -5,8 +5,8 @@ Analyzes a body of Java bytecode for portability and determinism. An intended us
 The tool finds all _unsafe_ methods transitively called from a set of root classes or methods. A method is unsafe if
 
 * it does floating-point arithmetic and is not marked `strictfp`.
+* it's blacklisted.
 * it's marked `native` and is not whitelisted [TODO].
-* it's blacklisted [TODO].
 
 ## Caveats ##
 
@@ -15,9 +15,8 @@ The tool finds all _unsafe_ methods transitively called from a set of root class
 
 ## TODO ##
 
-* Whitelists and blacklists - a method may always/never be called.
 * Annotations for whitelisting and blacklisting.
-* Native methods, unless whitelisted.
+* Optionally mark native methods unsafe, unless whitelisted.
 * A standard blacklist and whitelist covering some of the Java standard library.
   - For instance, the iteration order of HashMap/HashSet is not guaranteed.
     On the other hand the floating point math used on the load factor can't
