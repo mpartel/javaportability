@@ -1,0 +1,6 @@
+safe java.util.HashMap
+safe java.util.WeakHashMap
+safe java.util.Hashtable
+allowfp java.util.concurrent.ConcurrentHashMap$Segment
+allowfp java.lang.StringCoding::scale
+unsafe java.util.HashMap::iterator

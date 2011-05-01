@@ -7,6 +7,7 @@ import org.javaportability.analysis.AnalysisSettings;
 
 public class Settings {
     public List<String> searchPath = null;
+    public List<String> configFiles = null;
     public boolean help = false;
     public boolean trace = false;
     public boolean verbose = false;

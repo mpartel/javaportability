@@ -37,8 +37,12 @@ public class Reporter {
         writeln("Stats:");
         writeln("* Classes visited: " + result.callGraph.getClasses().size());
         writeln();
-        writeln("Unsafe call paths:");
-        writeUnsafeCallPaths();
+        if (result.unsafeCallPaths.isEmpty()) {
+            writeln("All call paths seem safe.");
+        } else {
+            writeln("Unsafe call paths:");
+            writeUnsafeCallPaths();
+        }
         writeln();
     }
 

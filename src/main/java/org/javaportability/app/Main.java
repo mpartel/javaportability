@@ -20,10 +20,11 @@ public class Main {
     }
     
     private static Settings readArgs(String[] args) {
-        ArgParser argParser = new ArgParser();
-        Settings settings = null;
+        Settings settings = new Settings();
+        settings.analysisSettings = new AnalysisSettings(makeClassFileLoader(settings));
+        ArgParser argParser = new ArgParser(settings, new ConfigFileLoader(settings));
         try {
-            settings = argParser.parseArgs(args);
+            argParser.parseArgs(args);
         } catch (BadUsageException e) {
             System.err.println(e.getMessage());
             System.err.println();
@@ -37,6 +38,13 @@ public class Main {
         return settings;
     }
     
+    private static ClassFileLoader makeClassFileLoader(Settings settings) {
+        if (settings.searchPath != null) {
+            return new ClassPathClassFileLoader(settings.searchPath);
+        } else {
+            return new DefaultClassFileLoader();
+        }
+    }
     
     private Settings settings;
     private Appendable output;
@@ -50,8 +58,6 @@ public class Main {
     
     private void run() throws Exception {
         roots = parseRoots();
-        ClassFileLoader classFileLoader = makeClassFileLoader();
-        settings.analysisSettings = new AnalysisSettings(classFileLoader);
         BasicCallGraphAnalysis basicResult = buildCallgraph();
         StrictfpSafetyAnalysis sfpResult = doStrictfpSafetyAnalysis(basicResult);
         new Reporter(settings).writeReport(output, roots, sfpResult);
@@ -70,14 +76,6 @@ public class Main {
             roots.add(root);
         }
         return roots;
-    }
-
-    private ClassFileLoader makeClassFileLoader() {
-        if (settings.searchPath != null) {
-            return new ClassPathClassFileLoader(settings.searchPath);
-        } else {
-            return new DefaultClassFileLoader();
-        }
     }
     
     private BasicCallGraphAnalysis buildCallgraph() throws Exception {

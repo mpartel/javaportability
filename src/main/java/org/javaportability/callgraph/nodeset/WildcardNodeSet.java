@@ -26,14 +26,18 @@ public class WildcardNodeSet implements NodeSet {
         
         this.pattern = Pattern.compile(regex.toString());
     }
-
+    
     @Override
     public boolean containsClass(String cls) {
-        return pattern.matcher(cls).matches();
+        return matches(cls);
     }
     
     @Override
     public boolean containsMethod(MethodPath path) {
-        return this.containsClass(path.getOwner());
+        return containsClass(path.getOwner()) || matches(path.getOwner() + "::" + path.getName());
+    }
+    
+    private boolean matches(String s) {
+        return pattern.matcher(s).matches();
     }
 }

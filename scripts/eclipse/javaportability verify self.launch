@@ -7,7 +7,7 @@
 <listEntry value="1"/>
 </listAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="org.javaportability.app.Main"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="verify org.javaportability.app.Main --verbose"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="verify org.javaportability.app.Main --verbose --config ${project_loc}/src/test/data/configfile"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="javaportability"/>
 <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-ea"/>
 </launchConfiguration>

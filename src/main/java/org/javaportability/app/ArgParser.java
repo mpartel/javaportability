@@ -6,11 +6,18 @@ import java.util.LinkedList;
 
 public class ArgParser {
 
-    public Settings parseArgs(String[] args) {
+    private Settings settings;
+    private ConfigFileLoader configFileLoader;
+    
+    public ArgParser(Settings settings, ConfigFileLoader configFileLoader) {
+        this.settings = settings;
+        this.configFileLoader = configFileLoader;
+    }
+    
+    public void parseArgs(String[] args) {
         Impl impl = new Impl(args);
         impl.processArgs();
         impl.checkUsage();
-        return impl.settings;
     }
     
     public String getUsage() {
@@ -21,21 +28,28 @@ public class ArgParser {
             "Targets can be class names or methods denoted \"pkg.Class::method\"\n" +
             "\n" +
             "Options:\n" +
-            "  -p, --path class:path:components    Class path to search classes from.\n" +
+            "  -p, --path <class:path:components>  Class path to search classes from.\n" +
             "                                      Omit to use the JVM's classpath.\n" +
+            "  -c, --config <configfile>           Load config file\n" +
             "  -h, --help                          This help message.\n" +
             "  -v, --verbose                       Print a little more.\n" +
             "      --debug                         Print detailed debug messages.\n" +
+            "\n" +
+            "Config files have one directive per line. Examples:\n" +
+            "  # Comment\n" +
+            "  // Comment\n" +
+            "  ignore java.util.Hash*\n" +
+            "  safe my.*.SafeClass\n" +
+            "  unsafe my.*.UnsafeClass::method\n" +
+            "  allowfp my.*.SafeFloatMath::mySafe*Method\n" +
             "\n";
     }
     
-    private static class Impl {
-        private Settings settings;
+    private class Impl {
         private String command;
         private LinkedList<String> remainingArgs;
         
         private Impl(String[] args) {
-            settings = new Settings();
             remainingArgs = new LinkedList<String>(Arrays.asList(args));
         }
         
@@ -55,12 +69,16 @@ public class ArgParser {
                     settings.verbose = true;
                 } else if (isOneOf(arg, "-p", "--path")) {
                     processPathArg();
+                } else if (isOneOf(arg, "-c", "--config")) {
+                    processConfigFileArg();
+                } else if (arg.startsWith("-")) {
+                    throw new BadUsageException("Invalid flag: " + arg);
                 } else {
                     settings.targets.add(arg);
                 }
             }
         }
-        
+
         private boolean haveHelpArg() {
             for (String arg : remainingArgs) {
                 if (isOneOf(arg, "-h", "--help")) {
@@ -97,6 +115,11 @@ public class ArgParser {
                     throw new BadUsageException("Search path element '" + s + "' should have ended with '.jar' or a slash");
                 }
             }
+        }
+        
+        private void processConfigFileArg() {
+            String file = requireArg("Config file name expected");
+            configFileLoader.loadConfig(new File(file));
         }
 
         private boolean isOneOf(String arg, String... variants) {

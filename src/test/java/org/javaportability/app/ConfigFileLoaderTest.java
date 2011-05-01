@@ -58,8 +58,12 @@ public class ConfigFileLoaderTest {
     public void testComments() {
         load("# this is a comment",
              "ignore *",
-             "// as is this");
+             "// as is this",
+             "safe Foo*   # Comments after directives",
+             "unsafe *Bar // are fine too");
         assertTrue(as.ignoreSet.containsClass("anything"));
+        assertTrue(as.assumedSafe.containsClass("FooBar"));
+        assertTrue(as.assumedUnsafe.containsClass("FooBar"));
     }
     
     

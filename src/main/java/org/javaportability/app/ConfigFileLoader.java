@@ -1,6 +1,11 @@
 package org.javaportability.app;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 import org.javaportability.analysis.AnalysisSettings;
 import org.javaportability.callgraph.nodeset.NodeSet;
@@ -8,12 +13,21 @@ import org.javaportability.callgraph.nodeset.NodeSets;
 import org.javaportability.callgraph.nodeset.WildcardNodeSet;
 
 public class ConfigFileLoader {
+    private static final Pattern commentPattern = Pattern.compile("(#|//).*$");
     private Settings settings;
     private Scanner scanner;
     
     public ConfigFileLoader(Settings settings) {
         this.settings = settings;
         this.scanner = null;
+    }
+    
+    public void loadConfig(File file) {
+        try {
+            loadConfig(new BufferedReader(new FileReader(file)));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     public void loadConfig(Readable source) {
@@ -25,8 +39,8 @@ public class ConfigFileLoader {
     }
 
     private void processLine(String line) {
-        line = line.trim();
-        if (shouldSkipLine(line)) {
+        line = cleanLine(line);
+        if (line.isEmpty()) {
             return;
         }
         String[] parts = line.split("\\s+", 2);
@@ -48,8 +62,8 @@ public class ConfigFileLoader {
         }
     }
 
-    private boolean shouldSkipLine(String line) {
-        return line.isEmpty() || line.startsWith("#") || line.startsWith("//");
+    private String cleanLine(String line) {
+        return commentPattern.matcher(line).replaceAll("").trim();
     }
 
     private NodeSet addToNodeSet(NodeSet set, String spec) {

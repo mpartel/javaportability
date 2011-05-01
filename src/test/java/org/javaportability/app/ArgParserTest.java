@@ -1,18 +1,31 @@
 package org.javaportability.app;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
+import java.io.File;
 import java.util.List;
 
-import org.javaportability.app.ArgParser;
-import org.javaportability.app.BadUsageException;
-import org.javaportability.app.Settings;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 public class ArgParserTest {
     
+    @Mock
+    private ConfigFileLoader configFileLoader;
+    
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+    }
+    
     private Settings parseArgs(String... args) {
-        return new ArgParser().parseArgs(args);
+        Settings settings = new Settings();
+        ArgParser parser = new ArgParser(settings, configFileLoader);
+        parser.parseArgs(args);
+        return settings;
     }
     
     private Settings parseVerifyArgs(String... args) {
@@ -58,6 +71,15 @@ public class ArgParserTest {
         assertEquals("Two::method", settings.targets.get(1));
     }
     
+    @Test
+    public void testConfigFiles() {
+        parseVerifyArgs("-c", "file1", "--config", "file2", "Target");
+        
+        verify(configFileLoader).loadConfig(new File("file1"));
+        verify(configFileLoader).loadConfig(new File("file2"));
+        verifyNoMoreInteractions(configFileLoader);
+    }
+    
     @Test(expected = BadUsageException.class)
     public void testBadUsageIfSearchPathEntryMissingTrailingSlashAndJarExtension() {
         parseVerifyArgs("-p", "foo/foo:bar.jar", "Target");
@@ -66,6 +88,11 @@ public class ArgParserTest {
     @Test(expected = BadUsageException.class)
     public void testBadUsageIfOnlyVerifyCommandGiven() {
         parseVerifyArgs(new String[0]);
+    }
+    
+    @Test(expected = BadUsageException.class)
+    public void testBadUsageIfInvalidFlagGiven() {
+        parseVerifyArgs("--foo", "Target");
     }
     
     @Test(expected = BadUsageException.class)
